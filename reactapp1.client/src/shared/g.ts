@@ -11,15 +11,15 @@
 import axios, { AxiosError } from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, CancelToken } from 'axios';
 
-export interface IWeatherForecastClient {
+export interface IRecipeClient {
     /**
      * Получение прогноза погоды
      * @return Прогноз погоды на 5 дней
      */
-    get(): Promise<WeatherForecast[]>;
+    get(): Promise<Recipe[]>;
 }
 
-export class WeatherForecastClient implements IWeatherForecastClient {
+export class RecipeClient implements IRecipeClient {
     protected instance: AxiosInstance;
     protected baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
@@ -36,8 +36,8 @@ export class WeatherForecastClient implements IWeatherForecastClient {
      * Получение прогноза погоды
      * @return Прогноз погоды на 5 дней
      */
-    get( cancelToken?: CancelToken): Promise<WeatherForecast[]> {
-        let url_ = this.baseUrl + "/api/WeatherForecast/Get";
+    get( cancelToken?: CancelToken): Promise<Recipe[]> {
+        let url_ = this.baseUrl + "/api/Recipe/Get";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: AxiosRequestConfig = {
@@ -60,7 +60,7 @@ export class WeatherForecastClient implements IWeatherForecastClient {
         });
     }
 
-    protected processGet(response: AxiosResponse): Promise<WeatherForecast[]> {
+    protected processGet(response: AxiosResponse): Promise<Recipe[]> {
         const status = response.status;
         let _headers: any = {};
         if (response.headers && typeof response.headers === "object") {
@@ -77,28 +77,36 @@ export class WeatherForecastClient implements IWeatherForecastClient {
             if (Array.isArray(resultData200)) {
                 result200 = [] as any;
                 for (let item of resultData200)
-                    result200!.push(WeatherForecast.fromJS(item));
+                    result200!.push(Recipe.fromJS(item));
             }
             else {
                 result200 = <any>null;
             }
-            return Promise.resolve<WeatherForecast[]>(result200);
+            return Promise.resolve<Recipe[]>(result200);
 
         } else if (status !== 200 && status !== 204) {
             const _responseText = response.data;
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
         }
-        return Promise.resolve<WeatherForecast[]>(null as any);
+        return Promise.resolve<Recipe[]>(null as any);
     }
 }
 
-export class WeatherForecast implements IWeatherForecast {
-    date?: Date;
-    temperatureC?: number;
-    temperatureF?: number;
-    summary?: string | undefined;
+export class Recipe implements IRecipe {
+    id?: number;
+    name?: string;
+    description?: string;
+    portion?: number;
+    time?: string;
+    userId?: string;
+    categoryId?: number;
+    category?: Category;
+    user?: User;
+    favourite?: Favourite[];
+    ingredient?: Ingredient[];
+    recipeStep?: RecipeStep[];
 
-    constructor(data?: IWeatherForecast) {
+    constructor(data?: IRecipe) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -109,41 +117,527 @@ export class WeatherForecast implements IWeatherForecast {
 
     init(_data?: any) {
         if (_data) {
-            this.date = _data["date"] ? new Date(_data["date"].toString()) : <any>undefined;
-            this.temperatureC = _data["temperatureC"];
-            this.temperatureF = _data["temperatureF"];
-            this.summary = _data["summary"];
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.portion = _data["portion"];
+            this.time = _data["time"];
+            this.userId = _data["userId"];
+            this.categoryId = _data["categoryId"];
+            this.category = _data["category"] ? Category.fromJS(_data["category"]) : <any>undefined;
+            this.user = _data["user"] ? User.fromJS(_data["user"]) : <any>undefined;
+            if (Array.isArray(_data["favourite"])) {
+                this.favourite = [] as any;
+                for (let item of _data["favourite"])
+                    this.favourite!.push(Favourite.fromJS(item));
+            }
+            if (Array.isArray(_data["ingredient"])) {
+                this.ingredient = [] as any;
+                for (let item of _data["ingredient"])
+                    this.ingredient!.push(Ingredient.fromJS(item));
+            }
+            if (Array.isArray(_data["recipeStep"])) {
+                this.recipeStep = [] as any;
+                for (let item of _data["recipeStep"])
+                    this.recipeStep!.push(RecipeStep.fromJS(item));
+            }
         }
     }
 
-    static fromJS(data: any): WeatherForecast {
+    static fromJS(data: any): Recipe {
         data = typeof data === 'object' ? data : {};
-        let result = new WeatherForecast();
+        let result = new Recipe();
         result.init(data);
         return result;
     }
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["date"] = this.date ? formatDate(this.date) : <any>undefined;
-        data["temperatureC"] = this.temperatureC;
-        data["temperatureF"] = this.temperatureF;
-        data["summary"] = this.summary;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["portion"] = this.portion;
+        data["time"] = this.time;
+        data["userId"] = this.userId;
+        data["categoryId"] = this.categoryId;
+        data["category"] = this.category ? this.category.toJSON() : <any>undefined;
+        data["user"] = this.user ? this.user.toJSON() : <any>undefined;
+        if (Array.isArray(this.favourite)) {
+            data["favourite"] = [];
+            for (let item of this.favourite)
+                data["favourite"].push(item.toJSON());
+        }
+        if (Array.isArray(this.ingredient)) {
+            data["ingredient"] = [];
+            for (let item of this.ingredient)
+                data["ingredient"].push(item.toJSON());
+        }
+        if (Array.isArray(this.recipeStep)) {
+            data["recipeStep"] = [];
+            for (let item of this.recipeStep)
+                data["recipeStep"].push(item.toJSON());
+        }
         return data;
     }
 }
 
-export interface IWeatherForecast {
-    date?: Date;
-    temperatureC?: number;
-    temperatureF?: number;
-    summary?: string | undefined;
+export interface IRecipe {
+    id?: number;
+    name?: string;
+    description?: string;
+    portion?: number;
+    time?: string;
+    userId?: string;
+    categoryId?: number;
+    category?: Category;
+    user?: User;
+    favourite?: Favourite[];
+    ingredient?: Ingredient[];
+    recipeStep?: RecipeStep[];
 }
 
-function formatDate(d: Date) {
-    return d.getFullYear() + '-' + 
-        (d.getMonth() < 9 ? ('0' + (d.getMonth()+1)) : (d.getMonth()+1)) + '-' +
-        (d.getDate() < 10 ? ('0' + d.getDate()) : d.getDate());
+export class Category implements ICategory {
+    id?: number;
+    name?: string;
+    recipe?: Recipe[];
+
+    constructor(data?: ICategory) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            if (Array.isArray(_data["recipe"])) {
+                this.recipe = [] as any;
+                for (let item of _data["recipe"])
+                    this.recipe!.push(Recipe.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): Category {
+        data = typeof data === 'object' ? data : {};
+        let result = new Category();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        if (Array.isArray(this.recipe)) {
+            data["recipe"] = [];
+            for (let item of this.recipe)
+                data["recipe"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface ICategory {
+    id?: number;
+    name?: string;
+    recipe?: Recipe[];
+}
+
+export class IdentityUserOfString implements IIdentityUserOfString {
+    id?: string | undefined;
+    userName?: string | undefined;
+    normalizedUserName?: string | undefined;
+    email?: string | undefined;
+    normalizedEmail?: string | undefined;
+    emailConfirmed?: boolean;
+    passwordHash?: string | undefined;
+    securityStamp?: string | undefined;
+    concurrencyStamp?: string | undefined;
+    phoneNumber?: string | undefined;
+    phoneNumberConfirmed?: boolean;
+    twoFactorEnabled?: boolean;
+    lockoutEnd?: Date | undefined;
+    lockoutEnabled?: boolean;
+    accessFailedCount?: number;
+
+    constructor(data?: IIdentityUserOfString) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.userName = _data["userName"];
+            this.normalizedUserName = _data["normalizedUserName"];
+            this.email = _data["email"];
+            this.normalizedEmail = _data["normalizedEmail"];
+            this.emailConfirmed = _data["emailConfirmed"];
+            this.passwordHash = _data["passwordHash"];
+            this.securityStamp = _data["securityStamp"];
+            this.concurrencyStamp = _data["concurrencyStamp"];
+            this.phoneNumber = _data["phoneNumber"];
+            this.phoneNumberConfirmed = _data["phoneNumberConfirmed"];
+            this.twoFactorEnabled = _data["twoFactorEnabled"];
+            this.lockoutEnd = _data["lockoutEnd"] ? new Date(_data["lockoutEnd"].toString()) : <any>undefined;
+            this.lockoutEnabled = _data["lockoutEnabled"];
+            this.accessFailedCount = _data["accessFailedCount"];
+        }
+    }
+
+    static fromJS(data: any): IdentityUserOfString {
+        data = typeof data === 'object' ? data : {};
+        let result = new IdentityUserOfString();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["userName"] = this.userName;
+        data["normalizedUserName"] = this.normalizedUserName;
+        data["email"] = this.email;
+        data["normalizedEmail"] = this.normalizedEmail;
+        data["emailConfirmed"] = this.emailConfirmed;
+        data["passwordHash"] = this.passwordHash;
+        data["securityStamp"] = this.securityStamp;
+        data["concurrencyStamp"] = this.concurrencyStamp;
+        data["phoneNumber"] = this.phoneNumber;
+        data["phoneNumberConfirmed"] = this.phoneNumberConfirmed;
+        data["twoFactorEnabled"] = this.twoFactorEnabled;
+        data["lockoutEnd"] = this.lockoutEnd ? this.lockoutEnd.toISOString() : <any>undefined;
+        data["lockoutEnabled"] = this.lockoutEnabled;
+        data["accessFailedCount"] = this.accessFailedCount;
+        return data;
+    }
+}
+
+export interface IIdentityUserOfString {
+    id?: string | undefined;
+    userName?: string | undefined;
+    normalizedUserName?: string | undefined;
+    email?: string | undefined;
+    normalizedEmail?: string | undefined;
+    emailConfirmed?: boolean;
+    passwordHash?: string | undefined;
+    securityStamp?: string | undefined;
+    concurrencyStamp?: string | undefined;
+    phoneNumber?: string | undefined;
+    phoneNumberConfirmed?: boolean;
+    twoFactorEnabled?: boolean;
+    lockoutEnd?: Date | undefined;
+    lockoutEnabled?: boolean;
+    accessFailedCount?: number;
+}
+
+export class IdentityUser extends IdentityUserOfString implements IIdentityUser {
+
+    constructor(data?: IIdentityUser) {
+        super(data);
+    }
+
+    override init(_data?: any) {
+        super.init(_data);
+    }
+
+    static override fromJS(data: any): IdentityUser {
+        data = typeof data === 'object' ? data : {};
+        let result = new IdentityUser();
+        result.init(data);
+        return result;
+    }
+
+    override toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        super.toJSON(data);
+        return data;
+    }
+}
+
+export interface IIdentityUser extends IIdentityUserOfString {
+}
+
+export class User extends IdentityUser implements IUser {
+    recipe?: Recipe[];
+    favourite?: Favourite[];
+
+    constructor(data?: IUser) {
+        super(data);
+    }
+
+    override init(_data?: any) {
+        super.init(_data);
+        if (_data) {
+            if (Array.isArray(_data["recipe"])) {
+                this.recipe = [] as any;
+                for (let item of _data["recipe"])
+                    this.recipe!.push(Recipe.fromJS(item));
+            }
+            if (Array.isArray(_data["favourite"])) {
+                this.favourite = [] as any;
+                for (let item of _data["favourite"])
+                    this.favourite!.push(Favourite.fromJS(item));
+            }
+        }
+    }
+
+    static override fromJS(data: any): User {
+        data = typeof data === 'object' ? data : {};
+        let result = new User();
+        result.init(data);
+        return result;
+    }
+
+    override toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.recipe)) {
+            data["recipe"] = [];
+            for (let item of this.recipe)
+                data["recipe"].push(item.toJSON());
+        }
+        if (Array.isArray(this.favourite)) {
+            data["favourite"] = [];
+            for (let item of this.favourite)
+                data["favourite"].push(item.toJSON());
+        }
+        super.toJSON(data);
+        return data;
+    }
+}
+
+export interface IUser extends IIdentityUser {
+    recipe?: Recipe[];
+    favourite?: Favourite[];
+}
+
+export class Favourite implements IFavourite {
+    id?: number;
+    recipeId?: number;
+    userId?: string;
+    recipe?: Recipe;
+    user?: User;
+
+    constructor(data?: IFavourite) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.recipeId = _data["recipeId"];
+            this.userId = _data["userId"];
+            this.recipe = _data["recipe"] ? Recipe.fromJS(_data["recipe"]) : <any>undefined;
+            this.user = _data["user"] ? User.fromJS(_data["user"]) : <any>undefined;
+        }
+    }
+
+    static fromJS(data: any): Favourite {
+        data = typeof data === 'object' ? data : {};
+        let result = new Favourite();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["recipeId"] = this.recipeId;
+        data["userId"] = this.userId;
+        data["recipe"] = this.recipe ? this.recipe.toJSON() : <any>undefined;
+        data["user"] = this.user ? this.user.toJSON() : <any>undefined;
+        return data;
+    }
+}
+
+export interface IFavourite {
+    id?: number;
+    recipeId?: number;
+    userId?: string;
+    recipe?: Recipe;
+    user?: User;
+}
+
+export class Ingredient implements IIngredient {
+    id?: number;
+    count?: number;
+    name?: string;
+    measurementId?: number;
+    recipeId?: number;
+    measurement?: Measurement;
+    recipe?: Recipe;
+
+    constructor(data?: IIngredient) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.count = _data["count"];
+            this.name = _data["name"];
+            this.measurementId = _data["measurementId"];
+            this.recipeId = _data["recipeId"];
+            this.measurement = _data["measurement"] ? Measurement.fromJS(_data["measurement"]) : <any>undefined;
+            this.recipe = _data["recipe"] ? Recipe.fromJS(_data["recipe"]) : <any>undefined;
+        }
+    }
+
+    static fromJS(data: any): Ingredient {
+        data = typeof data === 'object' ? data : {};
+        let result = new Ingredient();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["count"] = this.count;
+        data["name"] = this.name;
+        data["measurementId"] = this.measurementId;
+        data["recipeId"] = this.recipeId;
+        data["measurement"] = this.measurement ? this.measurement.toJSON() : <any>undefined;
+        data["recipe"] = this.recipe ? this.recipe.toJSON() : <any>undefined;
+        return data;
+    }
+}
+
+export interface IIngredient {
+    id?: number;
+    count?: number;
+    name?: string;
+    measurementId?: number;
+    recipeId?: number;
+    measurement?: Measurement;
+    recipe?: Recipe;
+}
+
+export class Measurement implements IMeasurement {
+    id?: number;
+    name?: string;
+    ingredient?: Ingredient[];
+
+    constructor(data?: IMeasurement) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            if (Array.isArray(_data["ingredient"])) {
+                this.ingredient = [] as any;
+                for (let item of _data["ingredient"])
+                    this.ingredient!.push(Ingredient.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): Measurement {
+        data = typeof data === 'object' ? data : {};
+        let result = new Measurement();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        if (Array.isArray(this.ingredient)) {
+            data["ingredient"] = [];
+            for (let item of this.ingredient)
+                data["ingredient"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IMeasurement {
+    id?: number;
+    name?: string;
+    ingredient?: Ingredient[];
+}
+
+export class RecipeStep implements IRecipeStep {
+    id?: number;
+    name?: string;
+    number?: number;
+    description?: string;
+    recipeId?: number;
+    recipe?: Recipe;
+
+    constructor(data?: IRecipeStep) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.number = _data["number"];
+            this.description = _data["description"];
+            this.recipeId = _data["recipeId"];
+            this.recipe = _data["recipe"] ? Recipe.fromJS(_data["recipe"]) : <any>undefined;
+        }
+    }
+
+    static fromJS(data: any): RecipeStep {
+        data = typeof data === 'object' ? data : {};
+        let result = new RecipeStep();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["number"] = this.number;
+        data["description"] = this.description;
+        data["recipeId"] = this.recipeId;
+        data["recipe"] = this.recipe ? this.recipe.toJSON() : <any>undefined;
+        return data;
+    }
+}
+
+export interface IRecipeStep {
+    id?: number;
+    name?: string;
+    number?: number;
+    description?: string;
+    recipeId?: number;
+    recipe?: Recipe;
 }
 
 export class ApiException extends Error {
