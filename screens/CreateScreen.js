@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import Slider from '@react-native-community/slider';
 import { Modal } from 'react-native';
 import {launchImageLibrary} from 'react-native-image-picker';
 
-const CreateScreen = () => {
-  const [selectedCategory, setSelectedCategory] = useState('');
+const CreateScreen = ({route}) => {
+  const { user, setUser  } = route.params;
+
+  const [selectedImage, setSelectedImage] = useState('');
+  const [selectedName, setSelectedName] = useState('');
+  const [selectedDescription, setSelectedDescription] = useState('');
+  const [selectedPortion, setSelectedPortion] = useState(0);
+  
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(0);
   const [cookingTime, setCookingTime] = useState(0);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState('');
-  const [selectedUnit, setSelectedUnit] = useState('');
+  const [selectedUnit, setSelectedUnit] = useState(0);
   const [ingredientAmount, setIngredientAmount] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -19,43 +27,188 @@ const CreateScreen = () => {
   const [selectedStepDescription, setSelectedStepDescription] = useState('');
   const [selectedStepImage, setSelectedStepImage] = useState('');
 
-  const staticCategories = [
-    { id: 1, name: 'Завтрак' },
-    { id: 2, name: 'Обед' },
-    { id: 3, name: 'Ужин' },
-    { id: 4, name: 'Салаты' },
-    { id: 5, name: 'Закуски' },
-    { id: 6, name: 'Десерты' },
-  ];
-
-  const cookingTimeLabels = ['<10 мин', '30 мин', '>60 мин'];
-
   const [ingredients, setIngredients] = useState([]);
+  const [measurements, setMeasurements] = useState([]);
   const [recipeSteps, setRecipeSteps] = useState([]);
 
-  const ingredientsName = ['Мука', 'Сахар', 'Соль', 'Яйца', 'Молоко'];
-  const units = ['г', 'кг', 'мл', 'л', 'шт'];
+  useEffect(() => {
+    getCategories();
+    getMeasurements();
+  }, []);
+
+  const getCategories = () => {
+      const requestOptions = {
+          method: "GET",
+      };
+      fetch('https://localhost:7108/api/Categories', requestOptions)
+          .then((response) => response.json())
+          .then(
+              (data) => {
+                  console.log("Data:", data);
+                  setCategories(data);
+              },
+              (error) => {
+                  console.log(error);
+              }
+          );
+  };
+
+  const getMeasurements = () => {
+    const requestOptions = {
+        method: "GET",
+    };
+    fetch('https://localhost:7108/api/Measurements', requestOptions)
+        .then((response) => response.json())
+        .then(
+            (data) => {
+                console.log("Data:", data);
+                setMeasurements(data);
+            },
+            (error) => {
+                console.log(error);
+            }
+        );
+  };  
+
+  const postRecipe = async () => {
+    const requestOptions = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            name: selectedName,
+            description: selectedDescription,
+            portion: selectedPortion,
+            time: cookingTimeLabels[cookingTime],
+            userId: user.id,
+            categoryId: selectedCategory,
+            imagePath: selectedImage.uri,
+        }),
+    };
+
+    try {
+        const response = await fetch("https://localhost:7108/api/recipes", requestOptions);
+        const data = await response.json();
+
+        if (response.status === 201) {
+            const newRecipeId = data.id;
+            await addIngredients(newRecipeId);
+            await addCookingSteps(newRecipeId);
+            console.log("Успех");
+            clearScreen();
+        } else {
+            if (data.error) {
+              console.log(data.error);
+            }
+        }
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+const clearScreen = () => {
+  setSelectedImage('');
+  setSelectedName('');
+  setSelectedDescription('');
+  setSelectedPortion(0);
+  setSelectedCategory(0);
+  setCookingTime(0);
+  setIngredients([]);
+  setRecipeSteps([]);
+}
+
+const addIngredients = async (recipeId) => {
+  const promises = ingredients.map(async (ingredient) => {
+      const ingredientData = {
+          name: ingredient.name,
+          count: ingredient.count,
+          measurementId: ingredient.measurement.id,
+          recipeId: recipeId,
+      };
+
+      const requestOptions = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(ingredientData),
+      };
+
+      try {
+          const response = await fetch("https://localhost:7108/api/ingredients", requestOptions);
+          const data = await response.json();
+
+          if (response.status === 201) {
+              console.log("Ингредиент добавлен:", ingredientData.name);
+          } else {
+              if (data.error) {
+                  console.log("Ошибка при добавлении ингредиента:", data.error);
+              }
+          }
+      } catch (error) {
+          console.log("Ошибка при добавлении ингредиента:", error);
+      }
+  });
+
+  await Promise.all(promises);
+};
+
+const addCookingSteps = async (recipeId) => {
+  const promises = recipeSteps.map(async (step) => {
+      const stepData = {
+          number: step.number,
+          description: step.description,
+          imagePath: step.image,
+          recipeId: recipeId
+      };
+
+      const requestOptions = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(stepData),
+      };
+
+      try {
+          const response = await fetch("https://localhost:7108/api/recipeSteps", requestOptions);
+          const data = await response.json();
+
+          if (response.status === 201) {
+              console.log("Шаг добавлен:", stepData.description);
+          } else {
+              if (data.error) {
+                  console.log("Ошибка при добавлении шага:", data.error);
+              }
+          }
+      } catch (error) {
+          console.log("Ошибка при добавлении шага:", error);
+      }
+  });
+
+  await Promise.all(promises);
+};
+
+  const cookingTimeLabels = ['<10 мин', '30 мин', '>60 мин'];
 
   const handleAddIngredient = () => {
     const ingredientExists = ingredients.some(ingredient => ingredient.name === selectedIngredient);
 
     if (ingredientExists) {
-      setErrorMessage('Ингредиент уже добавлен!'); // Устанавливаем сообщение об ошибке
-      return; // Прерываем выполнение функции
+      setErrorMessage('Ингредиент уже добавлен!');
+      return;
     }
+
+    const meas = measurements.find(item => item.id === Number(selectedUnit));
 
     const newIngredient = {
       name: selectedIngredient,
       count: parseInt(ingredientAmount),
-      measurementName: selectedUnit,
+      measurement: meas,
     };
 
     setIngredients([...ingredients, newIngredient]);
+    console.log(selectedUnit);
     setErrorMessage('');
 
     setModalVisible(false);
     setSelectedIngredient('');
-    setSelectedUnit('');
+    setSelectedUnit(0);
     setIngredientAmount('');
   };
 
@@ -63,7 +216,7 @@ const CreateScreen = () => {
 
     const newStep = {
       number: recipeSteps.length + 1,
-      image: selectedStepImage,
+      image: selectedStepImage.uri,
       description: selectedStepDescription,
     };
 
@@ -74,7 +227,7 @@ const CreateScreen = () => {
     setSelectedStepImage('');
   };
 
-  const openImagePicker = () => {
+  const openImagePickerForRecipe = () => {
     const options = {
       mediaType: 'photo', // Убедитесь, что вы указали тип медиа
     };
@@ -84,13 +237,35 @@ const CreateScreen = () => {
         console.log('Пользователь отменил выбор');
       } else if (response.error) {
         console.log('Ошибка при выборе: ', response.error);
-      } else if (response.customButton) {
-        console.log('Отправлено пользовательское нажатие на кнопку: ', response.customButton);
+      } else {
+        // Проверяем, существует ли assets и не пуст ли он
+        if (response.assets && response.assets.length > 0) {
+          const source = { uri: response.assets[0].uri }; // Получаем URI изображения
+          setSelectedImage(source); // Устанавливаем выбранное изображение
+          console.log("Данные", source)
+        } else {
+          console.log('Нет доступных изображений');
+        }
+      }
+    });
+  };
+
+  const openImagePickerForStep = () => {
+    const options = {
+      mediaType: 'photo', // Убедитесь, что вы указали тип медиа
+    };
+  
+    launchImageLibrary(options, (response) => {
+      if (response.didCancel) {
+        console.log('Пользователь отменил выбор');
+      } else if (response.error) {
+        console.log('Ошибка при выборе: ', response.error);
       } else {
         // Проверяем, существует ли assets и не пуст ли он
         if (response.assets && response.assets.length > 0) {
           const source = { uri: response.assets[0].uri }; // Получаем URI изображения
           setSelectedStepImage(source); // Устанавливаем выбранное изображение
+          console.log("Данные", source)
         } else {
           console.log('Нет доступных изображений');
         }
@@ -102,13 +277,22 @@ const CreateScreen = () => {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.uplouadImageContainer}>
-          <TouchableOpacity style={styles.uploadButton}>
-            <Image 
-              source={require('../assets/uploadImage.png')}
-              style={styles.uploadImage} 
-            />
-            <Text style={styles.uploadText}>Загрузить фотографию</Text>
-          </TouchableOpacity>
+          {!selectedImage ? (
+            <TouchableOpacity style={styles.uploadButton} onPress={openImagePickerForRecipe}>
+              <Image 
+                source={require('../assets/uploadImage.png')}
+                style={styles.uploadImage} 
+              />
+              <Text style={styles.uploadText}>Загрузить фотографию</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={openImagePickerForRecipe}>
+              <Image
+                source={{ uri: selectedImage.uri }}
+                style={styles.selectedImage}
+              />
+            </TouchableOpacity>
+          )}
         </View>
         <Text style={styles.heading}>Название</Text>
         <View style={styles.inputContainer}>
@@ -116,14 +300,20 @@ const CreateScreen = () => {
             style={styles.input}
             placeholder="Введите название рецепта"
             placeholderTextColor="#9FA5C0"
+            value={selectedName}
+            onChangeText={setSelectedName}
           />
         </View>
         <Text style={styles.heading}>Описание</Text>
-        <View style={styles.inputContainer}>
+        <View>
           <TextInput
-            style={styles.input}
+            style={styles.inputDescription}
             placeholder="Введите описание рецепта"
             placeholderTextColor="#9FA5C0"
+            multiline={true}
+            numberOfLines={4}
+            value={selectedDescription}
+            onChangeText={setSelectedDescription}
           />
         </View>
         <Text style={styles.heading}>Категория</Text>
@@ -133,11 +323,21 @@ const CreateScreen = () => {
             onValueChange={(itemValue) => setSelectedCategory(itemValue)}
             style={styles.picker}
           >
-            <Picker.Item label="Выберите категорию:" value="" />
-            {staticCategories.map((category) => (
+            <Picker.Item label="Выберите категорию:"/>
+            {categories.map((category) => (
               <Picker.Item key={category.id} label={category.name} value={category.id} />
             ))}
           </Picker>
+        </View>
+        <Text style={styles.heading}>Количество порций</Text>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Введите количество порций"
+            placeholderTextColor="#9FA5C0"
+            value={selectedPortion}
+            onChangeText={setSelectedPortion}
+          />
         </View>
         <View style={styles.footer}>
           <Text style={styles.heading}>Время готовки </Text>
@@ -169,7 +369,7 @@ const CreateScreen = () => {
           <View key={ingredient.name} style={styles.footerLeft}>
             <Image source={require('../assets/mark.png')} style={styles.icon} />
             <Text style={styles.ingredientText}>
-              {ingredient.name}: {ingredient.count} {ingredient.measurementName} 
+              {ingredient.name}: {ingredient.count} {ingredient.measurement.name} 
             </Text>
           </View>
         ))}
@@ -187,17 +387,15 @@ const CreateScreen = () => {
             <View style={styles.modalView}>
               <Text style={styles.modalText}>Добавить ингредиент</Text>
               
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedIngredient}
-                  onValueChange={(itemValue) => setSelectedIngredient(itemValue)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Выберите ингредиент" value="" />
-                  {ingredientsName.map((ingredient, index) => (
-                    <Picker.Item key={index} label={ingredient} value={ingredient} />
-                  ))}
-                </Picker>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Название ингредиента"
+                  keyboardType="default"
+                  value={selectedIngredient}
+                  onChangeText={setSelectedIngredient}
+                  placeholderTextColor="#9FA5C0"
+                />
               </View>
               
               <View style={styles.inputContainer}>
@@ -212,16 +410,16 @@ const CreateScreen = () => {
               </View>
               
               <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedUnit}
-                  onValueChange={(itemValue) => setSelectedUnit(itemValue)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Выберите единицу" value="" />
-                  {units.map((unit, index) => (
-                    <Picker.Item key={index} label={unit} value={unit} />
-                  ))}
-                </Picker>
+                  <Picker
+                      selectedValue={selectedUnit}
+                      onValueChange={(itemValue) => setSelectedUnit(itemValue)}
+                      style={styles.picker}
+                  >
+                      <Picker.Item label="Выберите единицу"/>
+                      {measurements.map((unit) => (
+                          <Picker.Item key={unit.id} label={unit.name} value={unit.id} />
+                      ))}
+                  </Picker>
               </View>
               {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
               <View style={styles.buttonContainer}>
@@ -237,14 +435,14 @@ const CreateScreen = () => {
         </Modal>
         <Text style={styles.heading}>Шаги</Text>
         {recipeSteps.map(step => (
-          <View key={step.id} style={styles.stepContainer}>
+          <View key={step.number} style={styles.stepContainer}>
             <View style={styles.stepNumberContainer}>
               <Text style={styles.stepNumber}>{step.number}</Text>
             </View>
             <View style={styles.stepDescriptionContainer}>
               <Text style={styles.stepDescription}>{step.description}</Text>
               {step.image && (
-                <Image source={{ uri: step.image.uri }} style={styles.stepImage} />
+                <Image source={{ uri: step.image }} style={styles.stepImage} />
               )}
             </View>
           </View>
@@ -262,7 +460,23 @@ const CreateScreen = () => {
           <View style={styles.modalOverlay}>
             <View style={styles.modalView}>
               <Text style={styles.modalText}>Добавить шаг</Text>
-              
+              <View style={styles.uplouadImageContainer}>
+                {!selectedStepImage ? (
+                  <TouchableOpacity style={styles.uploadStepButton} onPress={openImagePickerForStep}>
+                    <Image 
+                      source={require('../assets/uploadImage.png')}
+                      style={styles.uploadStepImage} 
+                    />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity onPress={openImagePickerForStep}>
+                    <Image
+                      source={{ uri: selectedStepImage.uri }}
+                      style={styles.selectedStepImage}
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
               <TextInput
                 style={styles.multilineInput}
                 placeholder="Опишите шаг приготовления"
@@ -273,16 +487,6 @@ const CreateScreen = () => {
                 onChangeText={setSelectedStepDescription}
                 textAlignVertical="top"
               />
-              
-              <View style={styles.uplouadImageContainer}>
-              <TouchableOpacity style={styles.uploadStepButton} onPress={openImagePicker}>
-                <Image 
-                  source={require('../assets/uploadStep.png')}
-                  style={styles.uploadStepImage} 
-                />
-              </TouchableOpacity>
-              </View>
-              
               <View style={styles.buttonContainer}>
                 <TouchableOpacity style={[styles.button, { backgroundColor: '#FF0000' }]} onPress={() => setStepModalVisible(false)}>
                   <Text style={styles.textStyle}>Отмена</Text>
@@ -294,7 +498,7 @@ const CreateScreen = () => {
             </View>
           </View>
         </Modal>
-        <TouchableOpacity style={[styles.acceptButton, { backgroundColor: '#1FCC79' }]}>
+        <TouchableOpacity style={[styles.acceptButton, { backgroundColor: '#1FCC79' }]} onPress={postRecipe}>
           <Text style={styles.acceptButtonText}>Готово</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -369,8 +573,12 @@ const styles = StyleSheet.create({
   },
   picker: {
     height: 50,
+    borderColor: '#D0DBEA', // Цвет рамки
+    borderWidth: 2, // Ширина рамки
+    borderRadius: 32,
     width: '100%',
     color: '#3E5481', // Цвет текста в Picker
+    padding: 15
   },
   footer: {
     flexDirection: 'row',
@@ -421,7 +629,7 @@ const styles = StyleSheet.create({
   
   modalView: {
     width: '80%', // Ширина модального окна
-    height: 440,
+    height: 600,
     backgroundColor: 'white',
     borderRadius: 20,
     padding: 35,
@@ -482,8 +690,8 @@ errorText: {
   marginVertical: 10,
 },
 uploadStepButton: {
-  width: 230,
-  height: 50, // Высота кнопки
+  width: 200,
+  height: 150, // Высота кнопки
   backgroundColor: '#F4F5F7',
   borderRadius: 20,
   alignItems: 'center', // Центрирует содержимое по горизонтали
@@ -496,7 +704,19 @@ uploadStepImage: {
   tintColor: '#9FA5C0',
 },
 multilineInput: {
-  height: 100, // Высота текстового поля
+  height: "50%", // Высота текстового поля
+  width: "100%",
+  borderColor: '#D0DBEA', // Цвет рамки
+  borderWidth: 2, // Ширина рамки
+  borderRadius: 10, // Закругленные углы
+  padding: 10, // Отступ внутри текстового поля
+  color: '#3E5481', // Цвет текста
+  fontSize: 15, // Размер текста
+  marginTop: 10, // Отступ сверху и снизу
+},
+inputDescription: {
+  height: 300, // Высота текстового поля
+  width: "100%",
   borderColor: '#D0DBEA', // Цвет рамки
   borderWidth: 2, // Ширина рамки
   borderRadius: 10, // Закругленные углы
@@ -550,6 +770,26 @@ acceptButtonText: {
   color: '#FFFFFF', // Цвет текста кнопки
   fontSize: 16, // Размер текста
   fontWeight: 'bold', // Жирный текст
+},
+selectedImage: {
+  width: 300, // Ширина кнопки на 90% экрана
+  height: 170, // Высота кнопки
+  borderColor: '#D0DBEA', // Цвет рамки
+  borderWidth: 2, // Ширина рамки
+  borderRadius: 20, // Закругленные углы
+  alignItems: 'center', // Центрирует содержимое по горизонтали
+  justifyContent: 'center', // Центрирует содержимое по вертикали
+  marginVertical: 20, // Отступ сверху
+},
+selectedStepImage: {
+  width: 200, // Ширина кнопки на 90% экрана
+  height: 150, // Высота кнопки
+  borderColor: '#D0DBEA', // Цвет рамки
+  borderWidth: 2, // Ширина рамки
+  borderRadius: 20, // Закругленные углы
+  alignItems: 'center', // Центрирует содержимое по горизонтали
+  justifyContent: 'center', // Центрирует содержимое по вертикали
+  marginVertical: 10, // Отступ сверху
 },
 });
 

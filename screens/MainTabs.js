@@ -14,12 +14,14 @@ import RecipeDetailsScreen from './RecipeDetailsScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-function HomeStack() {
+function HomeStack({route}) {
+    const { user, setUser } = route.params;
     return (
         <Stack.Navigator>
             <Stack.Screen 
                 name="CategoryScreen" 
                 component={CategoryScreen} 
+                initialParams={{ user }}
                 options={{ headerShown: false }} 
             />
             <Stack.Screen 
@@ -35,13 +37,17 @@ function HomeStack() {
             <Stack.Screen 
                 name="FavoriteScreen" 
                 component={FavoriteScreen} 
-                options={{ title: 'Избранное' }} // Добавьте заголовок, если нужно
+                initialParams={{ user }}
+                options={{ title: 'Избранное' }} 
             />
         </Stack.Navigator>
     );
 }
 
-function MainTabs() {
+function MainTabs({route}) {
+
+    const { user, setUser } = route.params;
+
     return (
         <Tab.Navigator 
             initialRouteName="Главный экран"
@@ -51,7 +57,8 @@ function MainTabs() {
         >
             <Tab.Screen 
                 name="Главный экран" 
-                component={HomeStack} // Используйте стек для главного экрана
+                component={HomeStack}
+                initialParams={{ user, setUser  }}
                 options={{
                     headerShown: false,
                     tabBarIcon: ({ color, size }) => (
@@ -65,7 +72,8 @@ function MainTabs() {
             />
             <Tab.Screen 
                 name="Создание рецепта" 
-                component={CreateScreen} 
+                component={CreateScreen}
+                initialParams={{ user, setUser  }} 
                 options={{
                     tabBarIcon: ({ color, size }) => (
                         <Image 
@@ -78,7 +86,8 @@ function MainTabs() {
             />
             <Tab.Screen 
                 name="Избранное" 
-                component={FavoriteScreen} 
+                component={FavoriteScreen}
+                initialParams={{ user }}
                 options={{
                     tabBarIcon: ({ color, size }) => (
                         <Image 
@@ -91,7 +100,8 @@ function MainTabs() {
             />
             <Tab.Screen 
                 name="Профиль"
-                component={ProfileScreen} 
+                component={ProfileScreen}
+                initialParams={{ user, setUser  }}
                 options={{
                     tabBarIcon: ({ color, size }) => (
                         <Image 

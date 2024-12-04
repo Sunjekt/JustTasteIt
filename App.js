@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useEffect, useState } from "react";
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SplashScreen from './screens/SplashScreen';
@@ -13,6 +13,31 @@ import ProfileScreen from './screens/ProfileScreen';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+
+  const [user, setUser] = useState({ isAuthenticated: false, id: "", userName: ""});
+
+  useEffect(() => {
+      const getUser  = async () => {
+          try {
+              const response = await fetch("https://localhost:7108/api/account/isauthenticated", {
+                method: 'GET',
+                credentials: 'include',
+            });
+              if (response.status === 401) {
+                  setUser ({ isAuthenticated: false, id: "", userName: ""});
+              } else {
+                  const data = await response.json();
+                  if (data && data.userName && data.userRole) {
+                      setUser ({ isAuthenticated: true, id: data.id, userName: data.userName});
+                  }
+              }
+          } catch (error) {
+              console.log(error);
+          }
+      };
+      getUser ();
+  }, [setUser ]);
+
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Splash">
@@ -20,6 +45,7 @@ export default function App() {
           name="Splash" 
           component={SplashScreen} 
           options={{ headerShown: false }} 
+          initialParams={{ user, setUser }}
         />
         <Stack.Screen 
           name="Registration" 

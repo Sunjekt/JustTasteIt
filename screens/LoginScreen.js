@@ -1,7 +1,52 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image } from 'react-native';
 
-const LoginScreen = ({ navigation }) => {
+const LoginScreen = ({ route, navigation }) => {
+  const { user, setUser  } = route.params;
+
+  const [errorMessages, setErrorMessages] = useState([]);
+  const [formValues, setFormValues] = useState({
+    email: '',
+    password: '',
+  });
+  const [rememberMe, setRememberMe] = useState(false);
+
+  const handleInputChange = (name, value) => {
+    setFormValues({ ...formValues, [name]: value });
+  };
+
+  const login = async () => {
+    console.log("Success:", formValues);
+
+    const requestOptions = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: formValues.email,
+        password: formValues.password,
+        rememberMe: rememberMe,
+      }),
+    };
+
+    try {
+      const response = await fetch("https://localhost:7108/api/account/login", requestOptions);
+      const data = await response.json();
+
+      if (response.status === 200) {
+        const newUser = { isAuthenticated: true, id: "015bf47f-44bb-43fc-bc70-b79a25f546fc", userName: "Sunjekt"}; // временно как и в регистрации
+        // setUser ({ isAuthenticated: true, id: data.id, userName: data.userName });
+        console.log("User  :", data);
+        navigation.navigate('Main', { user: newUser, setUser  });
+      } else {
+        if (data.error) {
+          setErrorMessages(data.error);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>С возвращением!</Text>
@@ -15,6 +60,8 @@ const LoginScreen = ({ navigation }) => {
           placeholderTextColor="#9FA5C0"
           keyboardType="email-address"
           autoCapitalize="none"
+          value={formValues.email}
+          onChangeText={(value) => handleInputChange('email', value)}
         />
       </View>
 
@@ -25,14 +72,23 @@ const LoginScreen = ({ navigation }) => {
           placeholder="Пароль"
           placeholderTextColor="#9FA5C0"
           secureTextEntry
+          value={formValues.password}
+          onChangeText={(value) => handleInputChange('password', value)}
         />
       </View>
 
-      <CustomButton title="Войти" onPress={() => navigation.navigate('Main')} />
+      <View style={styles.checkboxContainer}>
+        <TouchableOpacity onPress={() => setRememberMe(!rememberMe)} style={styles.checkbox}>
+          {rememberMe && <View style={styles.checked} />}
+        </TouchableOpacity>
+        <Text style={styles.checkboxLabel}>Запомнить меня</Text>
+      </View>
+
+      <CustomButton title="Войти" onPress={login} />
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>У вас ещё нет аккаунта? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Registration')}>
+        <TouchableOpacity onPress={() => navigation.navigate('Registration', { user, setUser  })}>
           <Text style={styles.loginText}>Регистрация</Text>
         </TouchableOpacity>
       </View>
@@ -88,7 +144,7 @@ const styles = StyleSheet.create({
     height: 50,
     flex: 1,
     color: '#3E5481',
-    fontSize: 15
+    fontSize: 15,
   },
   button: {
     backgroundColor: '#1FCC79',
@@ -114,6 +170,31 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#1FCC79',
     fontWeight: 'bold',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderColor: '#3E5481',
+    borderWidth: 1,
+    borderRadius: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  checked: {
+    width: 16,
+    height: 16,
+    backgroundColor: '#3E5481',
+    borderRadius: 2,
+  },
+  checkboxLabel: {
+    fontSize: 15,
+    color: '#3E5481',
   },
 });
 

@@ -1,17 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
-const CategoryScreen = ({ navigation }) => {
+const CategoryScreen = ({ route, navigation }) => {
+    const { user } = route.params;
     const [categories, setCategories] = useState([]);
 
-    const staticCategories = [
-        { id: 1, name: 'Завтрак' },
-        { id: 2, name: 'Обед' },
-        { id: 3, name: 'Ужин' },
-        { id: 4, name: 'Салаты' },
-        { id: 5, name: 'Закуски' },
-        { id: 6, name: 'Десерты' },
-    ];
+
 
     const iconMap = {
         1: require('../assets/categoryIcons/category1.png'),
@@ -23,15 +17,32 @@ const CategoryScreen = ({ navigation }) => {
     };
 
     useEffect(() => {
-        setCategories(staticCategories);
+        getCategories();
     }, []);
+
+    const getCategories = () => {
+        const requestOptions = {
+            method: "GET",
+        };
+        fetch('https://localhost:7108/api/Categories', requestOptions)
+            .then((response) => response.json())
+            .then(
+                (data) => {
+                    console.log("Data:", data);
+                    setCategories(data);
+                },
+                (error) => {
+                    console.log(error);
+                }
+            );
+    };
 
     const renderCategoryItem = ({ item }) => {
         const iconPath = iconMap[item.id];
         return (
             <TouchableOpacity 
                 style={styles.categoryItem} 
-                onPress={() => navigation.navigate('RecipesScreen', { category: item })}
+                onPress={() => navigation.navigate('RecipesScreen', { category: item, user })}
             >
                 <Text style={styles.categoryName}>{item.name}</Text>
                 <Image source={iconPath} style={styles.icon} />

@@ -3,7 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from 'rea
 
 const { width } = Dimensions.get('window');
 
-const SplashScreen = ({ navigation }) => {
+const SplashScreen = ({ route, navigation }) => {
+
+  const { user, setUser  } = route.params;
+
   return (
     <View style={styles.container}>
       <View style={styles.background} />
@@ -14,7 +17,7 @@ const SplashScreen = ({ navigation }) => {
       />
       <Text style={styles.title}>Just Taste It</Text>
       <Text style={styles.subtitle}>Присоединяйтесь к нашему{'\n'}сообществу, чтобы создавать{'\n'}кулинарные шедевры</Text>
-      <CustomButton title="Начать" onPress={() => navigation.navigate('Registration')} />
+      <CustomButton title="Начать" onPress={() => navigation.navigate('Registration', { user, setUser })} />
     </View>
   );
 };

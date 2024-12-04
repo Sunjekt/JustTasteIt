@@ -1,51 +1,125 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 
 const RecipeDetailsScreen = ({ route, navigation }) => {
-    const { recipe } = route.params;
+    const { recipe, user, favouriteItem } = route.params;
 
-    const ingredients = [
-        { id: 1, name: 'лук', count: 200, measurementName: 'г', recipeId: 1 },
-        { id: 2, name: 'морковь', count: 150, measurementName: 'г', recipeId: 1 },
-        { id: 3, name: 'картофель', count: 300, measurementName: 'г', recipeId: 1 },
-        { id: 4, name: 'чеснок', count: 5, measurementName: 'зубчиков', recipeId: 1 },
-        { id: 5, name: 'помидоры', count: 250, measurementName: 'г', recipeId: 1 },
-        { id: 6, name: 'перец сладкий', count: 100, measurementName: 'г', recipeId: 1 },
-        { id: 7, name: 'оливковое масло', count: 50, measurementName: 'мл', recipeId: 1 },
-        { id: 8, name: 'соль', count: 1, measurementName: 'ч.л.', recipeId: 2 },
-        { id: 9, name: 'перец черный', count: 0.5, measurementName: 'ч.л.', recipeId: 2 },
-        { id: 10, name: 'зелень (петрушка, укроп)', count: 30, measurementName: 'г', recipeId: 2 },
-        { id: 11, name: 'куриное филе', count: 400, measurementName: 'г', recipeId: 2 },
-        { id: 12, name: 'бульон', count: 1, measurementName: 'л', recipeId: 2 },
-        { id: 13, name: 'лавровый лист', count: 2, measurementName: 'шт.', recipeId: 2 },
-    ];
+    const [ingredients, setIngredients] = useState([]);
+    const [steps, setSteps] = useState([]);
+    const [isRecipeFavorite, setIsRecipeFavorite] = useState(favouriteItem);
 
-    const steps = [
-        {id: 1, number: 1, image: require('../assets/testStepsImages/testStepImage1.jpg'), description: 'Как сделать шашлык на шпажках из свинины в духовке? Мясо для него лучше подходит не постное, с небольшим количеством жира. Лучший вариант - свиная шея. Также можно взять вырезку, карбонад или лопатку. Кроме перца вы можете взять абсолютно любые приправы и специи, по своему вкусу', recipeId: 1},
-        {id: 2, number: 2, image: require('../assets/testStepsImages/testStepImage2.jpg'), description: 'Мясо обмойте, обсушите и нарежьте на одинаковые куски размером около 4 см', recipeId: 1},
-        {id: 3, number: 3, image: require('../assets/testStepsImages/testStepImage3.jpg'), description: 'Лук почистите и нарежьте крупными кольцами.', recipeId: 1},
-    ]
-    const recipeIngredients = ingredients.filter(ingredient => ingredient.recipeId === recipe.id);
-    const recipeSteps = steps.filter(step => step.recipeId === recipe.id);
+    useEffect(() => {
+        getIngredients();
+        getSteps();
+    }, [isRecipeFavorite]);
+
+    const getIngredients = () => {
+        const requestOptions = {
+            method: "GET",
+        };
+        fetch('https://localhost:7108/api/Ingredients', requestOptions)
+            .then((response) => response.json())
+            .then(
+                (data) => {
+                    console.log("Data:", data);
+                    setIngredients(data.filter(ingredient => ingredient.recipeId === recipe.id));
+                },
+                (error) => {
+                    console.log(error);
+                }
+            );
+    };
+
+    const getSteps = () => {
+        const requestOptions = {
+            method: "GET",
+        };
+        fetch('https://localhost:7108/api/RecipeSteps', requestOptions)
+            .then((response) => response.json())
+            .then(
+                (data) => {
+                    console.log("Data:", data);
+                    const sortedSteps = data.filter(step => step.recipeId === recipe.id).sort((a, b) => a.number - b.number);
+                    setSteps(sortedSteps);
+                    },
+                (error) => {
+                    console.log(error);
+                }
+            );
+    };
+
+    const postFavorite = async () => {
+        const requestOptions = {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                userId: user.id,
+                recipeId: recipe.id,
+            }),
+        };
+    
+        try {
+            const response = await fetch("https://localhost:7108/api/favourites", requestOptions);
+            const data = await response.json();
+    
+            if (response.status === 201) {
+                const newFavouriteId = data.id;
+                setIsRecipeFavorite({ recipeId: recipe.id, id: newFavouriteId });
+                console.log("Успех");
+            } else {
+                if (data.error) {
+                    setErrorMessages(data.error);
+                }
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const deleteFavourite = async (id) => {
+        const requestOptions = {
+            method: "DELETE",
+        };
+    
+        try {
+            const response = await fetch(`https://localhost:7108/api/favourites/${id}`, requestOptions);
+    
+            if (response.status === 204) {
+                setIsRecipeFavorite(null);
+            } else {
+                console.error("Не вышло");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleFavoritePress = async () => {
+        if (isRecipeFavorite) {
+            await deleteFavourite(favouriteItem.id);
+        } else {
+            await postFavorite();
+        }
+    };
 
     return (
         <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollView} showsVerticalScrollIndicator={false}>
-                <Image source={recipe.image} style={styles.recipeImage} />
+                <Image source={{uri: recipe.imagePath}} style={styles.recipeImage} />
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Image source={require('../assets/arrowBack.png')} style={styles.backIcon} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.favoriteButton}>
-                    <Image source={require('../assets/favorite.png')} style={styles.favoriteIcon} />
+                <TouchableOpacity style={styles.favoriteButton} onPress={handleFavoritePress}>
+                    <Image source={require('../assets/favorite.png')} style={[styles.favoriteIcon, { tintColor: isRecipeFavorite ? '#FF0000' : '#FFFFFF' }]}  />
                 </TouchableOpacity>
                 <View style={styles.detailsContainer}>
                     <Text style={styles.heading}>{recipe.name}</Text>
                     <View style={styles.footer}>
                         <View style={styles.footerLeft}>
-                            <Text style={styles.title}>{recipe.categoryName} • {recipe.cookingTime}</Text>
+                            <Text style={styles.title}>{recipe.category.name} • {recipe.time}</Text>
                         </View>
                         <View style={styles.footerRight}>
-                            <Text style={styles.recipeAuthor}>Порций: {recipe.servings}</Text>
+                            <Text style={styles.recipeAuthor}>Порций: {recipe.portion}</Text>
                         </View>
                     </View>
                     <View style={styles.separator} />
@@ -53,25 +127,25 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
                     <Text style={styles.title}>{recipe.description}</Text>
                     <View style={styles.separator} />
                     <Text style={styles.heading}>Ингредиенты</Text>
-                    {recipeIngredients.map(ingredient => (
+                    {ingredients.map(ingredient => (
                         <View key={ingredient.id} style={styles.footerLeft}>
                             <Image source={require('../assets/mark.png')} style={styles.icon} />
                             <Text style={styles.ingredientText}>
-                                {ingredient.name}: {ingredient.count} {ingredient.measurementName} 
+                                {ingredient.name}: {ingredient.count} {ingredient.measurement.name} 
                             </Text>
                         </View>
                     ))}
                     <View style={styles.separator} />
                     <Text style={styles.heading}>Шаги</Text>
-                    {recipeSteps.map(step => (
+                    {steps.map(step => (
                         <View key={step.id} style={styles.stepContainer}>
                             <View style={styles.stepNumberContainer}>
                                 <Text style={styles.stepNumber}>{step.number}</Text>
                             </View>
                             <View style={styles.stepDescriptionContainer}>
                                 <Text style={styles.stepDescription}>{step.description}</Text>
-                                {step.image && (
-                                    <Image source={step.image} style={styles.stepImage} />
+                                {step.imagePath && (
+                                    <Image source={{uri: step.imagePath}} style={styles.stepImage} />
                                 )}
                             </View>
                         </View>
@@ -133,7 +207,6 @@ const styles = StyleSheet.create({
     favoriteIcon: {
         width: 35, // Ширина иконки
         height: 35, // Высота иконки
-        tintColor: '#FFFFFF',
     },
     backButton: {
         position: 'absolute',
