@@ -149,7 +149,7 @@ const RecipesScreen = ({ route, navigation }) => {
                 />
             </View>
             <FlatList
-                data={filteredRecipes} // Используем отфильтрованные рецепты
+                data={filteredRecipes}
                 renderItem={renderRecipeItem}
                 keyExtractor={(item) => item.id.toString()}
                 numColumns={1} 

@@ -18,7 +18,7 @@ const CreateScreen = ({route}) => {
   const [cookingTime, setCookingTime] = useState(0);
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedIngredient, setSelectedIngredient] = useState('');
+  const [selectedIngredient, setSelectedIngredient] = useState(0);
   const [selectedUnit, setSelectedUnit] = useState(0);
   const [ingredientAmount, setIngredientAmount] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -28,12 +28,14 @@ const CreateScreen = ({route}) => {
   const [selectedStepImage, setSelectedStepImage] = useState('');
 
   const [ingredients, setIngredients] = useState([]);
+  const [ingredientNames, setIngredientNames] = useState([]);
   const [measurements, setMeasurements] = useState([]);
   const [recipeSteps, setRecipeSteps] = useState([]);
 
   useEffect(() => {
     getCategories();
     getMeasurements();
+    getIngredientNames();
   }, []);
 
   const getCategories = () => {
@@ -63,6 +65,23 @@ const CreateScreen = ({route}) => {
             (data) => {
                 console.log("Data:", data);
                 setMeasurements(data);
+            },
+            (error) => {
+                console.log(error);
+            }
+        );
+  };  
+
+  const getIngredientNames = () => {
+    const requestOptions = {
+        method: "GET",
+    };
+    fetch('https://localhost:7108/api/IngredientNames', requestOptions)
+        .then((response) => response.json())
+        .then(
+            (data) => {
+                console.log("Data:", data);
+                setIngredientNames(data);
             },
             (error) => {
                 console.log(error);
@@ -119,7 +138,7 @@ const clearScreen = () => {
 const addIngredients = async (recipeId) => {
   const promises = ingredients.map(async (ingredient) => {
       const ingredientData = {
-          name: ingredient.name,
+          ingredientNameId: ingredient.ingredientName.id,
           count: ingredient.count,
           measurementId: ingredient.measurement.id,
           recipeId: recipeId,
@@ -136,7 +155,7 @@ const addIngredients = async (recipeId) => {
           const data = await response.json();
 
           if (response.status === 201) {
-              console.log("Ингредиент добавлен:", ingredientData.name);
+              console.log("Ингредиент добавлен:", ingredientData.ingredientNameId);
           } else {
               if (data.error) {
                   console.log("Ошибка при добавлении ингредиента:", data.error);
@@ -187,7 +206,7 @@ const addCookingSteps = async (recipeId) => {
   const cookingTimeLabels = ['<10 мин', '30 мин', '>60 мин'];
 
   const handleAddIngredient = () => {
-    const ingredientExists = ingredients.some(ingredient => ingredient.name === selectedIngredient);
+    const ingredientExists = ingredients.some(ingredient => ingredient.ingredientName.id === Number(selectedIngredient));
 
     if (ingredientExists) {
       setErrorMessage('Ингредиент уже добавлен!');
@@ -195,19 +214,21 @@ const addCookingSteps = async (recipeId) => {
     }
 
     const meas = measurements.find(item => item.id === Number(selectedUnit));
+    const ingName = ingredientNames.find(item => item.id === Number(selectedIngredient));
 
     const newIngredient = {
-      name: selectedIngredient,
+      ingredientName: ingName,
       count: parseInt(ingredientAmount),
       measurement: meas,
     };
 
     setIngredients([...ingredients, newIngredient]);
+    console.log(selectedIngredient);
     console.log(selectedUnit);
     setErrorMessage('');
 
     setModalVisible(false);
-    setSelectedIngredient('');
+    setSelectedIngredient(0);
     setSelectedUnit(0);
     setIngredientAmount('');
   };
@@ -366,10 +387,10 @@ const addCookingSteps = async (recipeId) => {
         </View>
         <Text style={styles.heading}>Ингредиенты</Text>
         {ingredients.map(ingredient => (
-          <View key={ingredient.name} style={styles.footerLeft}>
+          <View key={ingredient.ingredientName.id} style={styles.footerLeft}>
             <Image source={require('../assets/mark.png')} style={styles.icon} />
             <Text style={styles.ingredientText}>
-              {ingredient.name}: {ingredient.count} {ingredient.measurement.name} 
+              {ingredient.ingredientName.name}: {ingredient.count} {ingredient.measurement.name} 
             </Text>
           </View>
         ))}
@@ -387,15 +408,17 @@ const addCookingSteps = async (recipeId) => {
             <View style={styles.modalView}>
               <Text style={styles.modalText}>Добавить ингредиент</Text>
               
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Название ингредиента"
-                  keyboardType="default"
-                  value={selectedIngredient}
-                  onChangeText={setSelectedIngredient}
-                  placeholderTextColor="#9FA5C0"
-                />
+              <View style={styles.pickerContainer}>
+                  <Picker
+                      selectedValue={selectedIngredient}
+                      onValueChange={(itemValue) => setSelectedIngredient(itemValue)}
+                      style={styles.picker}
+                  >
+                      <Picker.Item label="Выберите ингредиент"/>
+                      {ingredientNames.map((ingredientName) => (
+                          <Picker.Item key={ingredientName.id} label={ingredientName.name} value={ingredientName.id} />
+                      ))}
+                  </Picker>
               </View>
               
               <View style={styles.inputContainer}>

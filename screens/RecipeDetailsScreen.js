@@ -131,7 +131,7 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
                         <View key={ingredient.id} style={styles.footerLeft}>
                             <Image source={require('../assets/mark.png')} style={styles.icon} />
                             <Text style={styles.ingredientText}>
-                                {ingredient.name}: {ingredient.count} {ingredient.measurement.name} 
+                                {ingredient.ingredientName.name}: {ingredient.count} {ingredient.measurement.name} 
                             </Text>
                         </View>
                     ))}

@@ -114,7 +114,7 @@ const deleteFavourite = async (id) => {
         }
     };
 
-    return ( //временно выводим тестовое изображение
+    return ( 
         <TouchableOpacity 
             style={styles.recipeItem} 
             onPress={() => navigation.navigate('RecipeDetailsScreen', { recipe: item, user, favouriteItem })}
