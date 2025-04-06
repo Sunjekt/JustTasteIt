@@ -33,9 +33,10 @@ const LoginScreen = ({ route, navigation }) => {
       const data = await response.json();
 
       if (response.status === 200) {
-        const newUser = { isAuthenticated: true, id: "015bf47f-44bb-43fc-bc70-b79a25f546fc", userName: "Sunjekt"}; // временно как и в регистрации
-        // setUser ({ isAuthenticated: true, id: data.id, userName: data.userName });
-        console.log("User  :", data);
+        console.log("Data  :", data);
+        const newUser = { isAuthenticated: true, id: data.userId, userName: data.userName, imagePath: data.userImagePath}; // временно как и в регистрации
+        // setUser ({ isAuthenticated: true, id: data.userId, userName: data.userName });
+        console.log("User  :", newUser);
         navigation.navigate('Main', { user: newUser, setUser  });
       } else {
         if (data.error) {

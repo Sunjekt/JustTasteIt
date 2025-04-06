@@ -1,11 +1,13 @@
 import React, { useState }  from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image } from 'react-native';
+import {launchImageLibrary} from 'react-native-image-picker';
 
 const RegistrationScreen = ({ route, navigation }) => {
 
   const { user, setUser } = route.params;
 
-  const [errorMessages, setErrorMessages] = useState([])
+  const [errorMessages, setErrorMessages] = useState([]);
+  const [selectedImage, setSelectedImage] = useState('');
   const [formValues, setFormValues] = useState({
     username: '',
     email: '',
@@ -15,6 +17,29 @@ const RegistrationScreen = ({ route, navigation }) => {
 
   const handleInputChange = (name, value) => {
     setFormValues({ ...formValues, [name]: value });
+  };
+
+  const openImagePicker = () => {
+    const options = {
+      mediaType: 'photo', // Убедитесь, что вы указали тип медиа
+    };
+  
+    launchImageLibrary(options, (response) => {
+      if (response.didCancel) {
+        console.log('Пользователь отменил выбор');
+      } else if (response.error) {
+        console.log('Ошибка при выборе: ', response.error);
+      } else {
+        // Проверяем, существует ли assets и не пуст ли он
+        if (response.assets && response.assets.length > 0) {
+          const source = { uri: response.assets[0].uri }; // Получаем URI изображения
+          setSelectedImage(source); // Устанавливаем выбранное изображение
+          console.log("Данные", source)
+        } else {
+          console.log('Нет доступных изображений');
+        }
+      }
+    });
   };
 
   const registration = async () => {
@@ -28,6 +53,7 @@ const RegistrationScreen = ({ route, navigation }) => {
         email: formValues.email,
         password: formValues.password,
         passwordConfirm: formValues.passwordConfirm,
+        imagePath: selectedImage.uri,
       }),
     };
 
@@ -36,9 +62,9 @@ const RegistrationScreen = ({ route, navigation }) => {
       const data = await response.json();
 
       if (response.status === 200) {
-        const newUser = { isAuthenticated: true, id: "015bf47f-44bb-43fc-bc70-b79a25f546fc", userName: "Sunjekt"}; // временный обход пока не работает получение пользователя
-        // setUser ({ isAuthenticated: true, id: data.id, userName: data.userName});
-        console.log("User :", data);
+        const newUser = { isAuthenticated: true, id: data.userId, userName: data.userName, imagePath: data.userImagePath}; // временно как и в регистрации
+        // setUser ({ isAuthenticated: true, id: data.userId, userName: data.userName });
+        console.log("User  :", newUser);
         navigation.navigate('Main', { user: newUser, setUser });
       } else {
         if (data.error) {
@@ -54,6 +80,25 @@ const RegistrationScreen = ({ route, navigation }) => {
     <View style={styles.container}>
       <Text style={styles.title}>Добро пожаловать!</Text>
       <Text style={styles.subtitle}>Создайте свой аккаунт здесь</Text>
+
+      <View style={styles.uplouadImageContainer}>
+        {!selectedImage ? (
+          <TouchableOpacity style={styles.uploadButton} onPress={openImagePicker}>
+            <Image 
+              source={require('../assets/uploadImage.png')}
+              style={styles.uploadImage} 
+            />
+            <Text style={styles.uploadText}>Загрузить фотографию</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity onPress={openImagePicker}>
+            <Image
+              source={{ uri: selectedImage.uri }}
+              style={styles.selectedImage}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <View style={styles.inputContainer}>
         <Image source={require('../assets/registrationIcons/username.png')} style={styles.icon} />
@@ -189,6 +234,41 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#1FCC79',
     fontWeight: 'bold',
+  },
+  uplouadImageContainer: {
+    alignItems: 'center',
+  },
+  uploadButton: {
+    width: '90%', // Ширина кнопки на 90% экрана
+    height: 170, // Высота кнопки
+    borderColor: '#D0DBEA', // Цвет рамки
+    borderWidth: 2, // Ширина рамки
+    borderRadius: 20, // Закругленные углы
+    borderStyle: 'dashed', // Стиль рамки (пунктирная)
+    alignItems: 'center', // Центрирует содержимое по горизонтали
+    justifyContent: 'center', // Центрирует содержимое по вертикали
+    marginVertical: 20, // Отступ сверху
+  },
+  uploadImage: {
+    width: 50, // Ширина изображения
+    height: 50, // Высота изображения
+    tintColor: '#9FA5C0',
+    marginBottom: 10, // Отступ между изображением и текстом
+  },
+  uploadText: {
+    color: '#3E5481', // Цвет текста
+    textAlign: 'center',
+    fontSize: 16, // Размер текста
+  },
+  selectedImage: {
+    width: 170, // Ширина кнопки на 90% экрана
+    height: 170, // Высота кнопки
+    borderColor: '#D0DBEA', // Цвет рамки
+    borderWidth: 2, // Ширина рамки
+    borderRadius: 20, // Закругленные углы
+    alignItems: 'center', // Центрирует содержимое по горизонтали
+    justifyContent: 'center', // Центрирует содержимое по вертикали
+    marginVertical: 20, // Отступ сверху
   },
 });
 

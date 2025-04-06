@@ -10,6 +10,7 @@ const ProfileScreen = ({route, navigation}) => {
 
   useEffect(() => {
       getRecipes();
+      console.log(user); //
       getFavourites();
 
       const unsubscribe = navigation.addListener('focus', () => {
@@ -140,7 +141,7 @@ const deleteFavourite = async (id) => {
   
       <View style={styles.profileContainer}>
         <Image
-          source={require('../assets/registrationIcons/username.png')}
+          source={{uri: user.imagePath}}
           style={styles.profileImage}
         />
         <Text style={styles.userName}>{user.userName}</Text>
@@ -174,6 +175,8 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
+    borderColor: '#3E5481',
+    borderWidth: 1,
     marginBottom: 10,
   },
   userName: {

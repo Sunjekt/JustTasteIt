@@ -14,7 +14,7 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
 
-  const [user, setUser] = useState({ isAuthenticated: false, id: "", userName: ""});
+  const [user, setUser] = useState({ isAuthenticated: false, id: "", userName: "", ImagePath: ""});
 
   useEffect(() => {
       const getUser  = async () => {
@@ -24,7 +24,7 @@ export default function App() {
                 credentials: 'include',
             });
               if (response.status === 401) {
-                  setUser ({ isAuthenticated: false, id: "", userName: ""});
+                  setUser ({ isAuthenticated: false, id: "", userName: "", ImagePath: ""});
               } else {
                   const data = await response.json();
                   if (data && data.userName && data.userRole) {
