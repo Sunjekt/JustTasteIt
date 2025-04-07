@@ -27,12 +27,12 @@ const RecipesScreen = ({ route, navigation }) => {
         const requestOptions = {
             method: "GET",
         };
-        fetch('https://localhost:7108/api/Recipes', requestOptions)
+        fetch(`https://localhost:7108/api/Recipes/ByCategoryId/${category.id}`, requestOptions)
             .then((response) => response.json())
             .then(
                 (data) => {
                     console.log("Data:", data);
-                    setRecipes(data.filter(recipe => recipe.categoryId === category.id));
+                    setRecipes(data);
                 },
                 (error) => {
                     console.log(error);
@@ -44,12 +44,12 @@ const RecipesScreen = ({ route, navigation }) => {
         const requestOptions = {
             method: "GET",
         };
-        fetch('https://localhost:7108/api/Favourites', requestOptions)
+        fetch(`https://localhost:7108/api/Favourites/byUserId/${user.id}`, requestOptions)
             .then((response) => response.json())
             .then(
                 (data) => {
                     console.log("Data:", data);
-                    setFavourites(data.filter(item => item.userId === user.id).map(fav => ({ recipeId: fav.recipeId, id: fav.id })));
+                    setFavourites(data.map(fav => ({ recipeId: fav.recipeId, id: fav.id })));
                     console.log(favourites);
                 },
                 (error) => {
@@ -126,7 +126,7 @@ const RecipesScreen = ({ route, navigation }) => {
                     <Image source={require('../assets/favorite.png')} style={[styles.favoriteIcon, { tintColor: favouriteItem ? '#FF0000' : '#FFFFFF' }]} />
                 </TouchableOpacity>
                 <Text style={styles.recipeName}>{item.name}</Text>
-                <Text style={styles.recipeCookingTime}>{category.name} • {item.time}</Text>
+                <Text style={styles.recipeCookingTime}>{item.categoryName} • {item.time}</Text>
             </TouchableOpacity>
         );
     };

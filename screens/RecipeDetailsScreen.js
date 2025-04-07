@@ -15,18 +15,19 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
         getIngredients();
         getSteps();
         getComments();
+        console.log(recipe);
     }, [isRecipeFavorite]);
 
     const getIngredients = () => {
         const requestOptions = {
             method: "GET",
         };
-        fetch('https://localhost:7108/api/Ingredients', requestOptions)
+        fetch(`https://localhost:7108/api/Ingredients/ByRecipeId/${recipe.id}`, requestOptions)
             .then((response) => response.json())
             .then(
                 (data) => {
                     console.log("Ингредиенты:", data);
-                    setIngredients(data.filter(ingredient => ingredient.recipeId === recipe.id));
+                    setIngredients(data);
                 },
                 (error) => {
                     console.log(error);
@@ -38,13 +39,12 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
         const requestOptions = {
             method: "GET",
         };
-        fetch('https://localhost:7108/api/RecipeSteps', requestOptions)
+        fetch(`https://localhost:7108/api/RecipeSteps/ByRecipeId/${recipe.id}`, requestOptions)
             .then((response) => response.json())
             .then(
                 (data) => {
                     console.log("Шаги:", data);
-                    const sortedSteps = data.filter(step => step.recipeId === recipe.id).sort((a, b) => a.number - b.number);
-                    setSteps(sortedSteps);
+                    setSteps(data);
                     },
                 (error) => {
                     console.log(error);
@@ -56,15 +56,14 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
         const requestOptions = {
             method: "GET",
         };
-        fetch(`https://localhost:7108/api/Comments`, requestOptions)
+        fetch(`https://localhost:7108/api/Comments/ByRecipeId/${recipe.id}`, requestOptions)
             .then((response) => response.json())
             .then(
                 (data) => {
                     console.log("Комментарии:", data);
                     console.log("Количество комментариев:", data.length);
-                    const sortedComments = data.filter(comment => comment.recipeId === recipe.id)
-                    setComments(sortedComments);
-                    setCommentsCount(sortedComments.length);
+                    setComments(data);
+                    setCommentsCount(data.length);
                 },
                 (error) => {
                     console.log(error);
@@ -79,7 +78,9 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
             body: JSON.stringify({
                 userId: user.id,
                 recipeId: recipe.id,
-                description: newComment
+                description: newComment,
+                userName: user.userName,
+                userImagePath: user.imagePath
             }),
         };
 
@@ -88,18 +89,18 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
             const data = await response.json();
 
             if (response.status === 201) {
+                console.log(data);
                 const newComment = {
                     id: data.id,
                     description: data.description,
-                    user: user,
+                    userName: data.userName,
+                    userImagePath: data.userImagePath,
                     userId: data.userId,
                     recipeId: data.recipeId,
                   };
                 setComments([...comments, newComment]);
                 setNewComment('');
                 setCommentsCount(prevCount => prevCount + 1)
-                console.log(comments);
-                console.log(newComment);
             } else {
                 if (data.error) {
                     setErrorMessages(data.error);
@@ -198,7 +199,7 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
                     <Text style={styles.heading}>{recipe.name}</Text>
                     <View style={styles.footer}>
                         <View style={styles.footerLeft}>
-                            <Text style={styles.title}>{recipe.category.name} • {recipe.time}</Text>
+                            <Text style={styles.title}>{recipe.categoryName} • {recipe.time}</Text>
                         </View>
                         <View style={styles.footerRight}>
                             <Text style={styles.recipeAuthor}>Порций: {recipe.portion}</Text>
@@ -213,7 +214,7 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
                         <View key={ingredient.id} style={styles.footerLeft}>
                             <Image source={require('../assets/mark.png')} style={styles.icon} />
                             <Text style={styles.ingredientText}>
-                                {ingredient.ingredientName.name}: {ingredient.count} {ingredient.measurement.name} 
+                                {ingredient.ingredientName}: {ingredient.count} {ingredient.measurementName} 
                             </Text>
                         </View>
                     ))}
@@ -264,13 +265,13 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
                     <View key={comment.id} style={styles.commentContainer}>
                         <View style={styles.avatarContainer}>
                             <Image 
-                                source={{uri: comment.user.imagePath}} 
+                                source={{uri: comment.userImagePath}} 
                                 style={styles.avatarImage}
                             />
                         </View>
                         <View style={styles.commentContent}>
                             <View style={styles.commentHeader}>
-                                <Text style={styles.userName}>{comment.user.userName}</Text>
+                                <Text style={styles.userName}>{comment.userName}</Text>
                                 {comment.userId === user.id && (
                                     <TouchableOpacity 
                                         onPress={() => deleteComment(comment.id)}

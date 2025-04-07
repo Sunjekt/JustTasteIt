@@ -23,12 +23,12 @@ const FavoriteScreen = ({ route, navigation }) => {
         const requestOptions = {
             method: "GET",
         };
-        fetch('https://localhost:7108/api/Favourites', requestOptions)
+        fetch(`https://localhost:7108/api/Favourites/ByUserId/${user.id}`, requestOptions)
             .then((response) => response.json())
             .then(
                 (data) => {
                     console.log("Data:", data);
-                    setFavourites(data.filter(item => item.userId === user.id));
+                    setFavourites(data);
                 },
                 (error) => {
                     console.log(error);
@@ -55,20 +55,34 @@ const FavoriteScreen = ({ route, navigation }) => {
     };
 
     const filteredRecipes = favourites.filter(favourite => 
-        favourite.recipe.name.toLowerCase().includes(searchText.toLowerCase())
+        favourite.recipeName.toLowerCase().includes(searchText.toLowerCase())
     );
 
     const renderRecipeItem = ({ item }) => (
         <TouchableOpacity 
             style={styles.recipeItem} 
-            onPress={() => navigation.navigate('RecipeDetailsScreen', { recipe: item.recipe, user, favouriteItem: { id: item.id, recipeId: item.recipeId }})} // Переход на экран деталей рецепта
+            onPress={() => navigation.navigate('RecipeDetailsScreen', {
+                recipe: {
+                    id: item.recipeId,
+                    name: item.recipeName,
+                    time: item.recipeTime,
+                    categoryName: item.recipeCategoryName,
+                    imagePath: item.recipeImagePath,
+                    portion: item.recipePortion,
+                    description: item.recipeDescription
+                },
+                user, favouriteItem: {
+                    id: item.id,
+                    recipeId: item.recipeId
+                }
+            })}
         >
-            <Image source={{uri: item.recipe.imagePath}} style={styles.recipeImage} />
+            <Image source={{uri: item.recipeImagePath}} style={styles.recipeImage} />
             <TouchableOpacity style={styles.favoriteButton} onPress={() => deleteFavourite(item.id)}>
                 <Image source={require('../assets/favorite.png')} style={styles.favoriteIcon} />
             </TouchableOpacity>
-            <Text style={styles.recipeName}>{item.recipe.name}</Text>
-            <Text style={styles.recipeCookingTime}>{item.recipe.time}</Text>
+            <Text style={styles.recipeName}>{item.recipeName}</Text>
+            <Text style={styles.recipeCookingTime}>{item.recipeCategoryName} • {item.recipeTime}</Text>
         </TouchableOpacity>
     );
 
