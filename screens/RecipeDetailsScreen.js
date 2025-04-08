@@ -208,6 +208,14 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
                     <View style={styles.separator} />
                     <Text style={styles.heading}>Описание</Text>
                     <Text style={styles.title}>{recipe.description}</Text>
+                    <View style={styles.authorContainer}>
+                        <Text style={styles.authorName}>Автор:</Text>
+                        <Image 
+                            source={{uri: recipe.userImagePath}} 
+                            style={styles.authorAvatar}
+                        />
+                        <Text style={styles.authorName}>{recipe.userName}</Text>
+                    </View>
                     <View style={styles.separator} />
                     <Text style={styles.heading}>Ингредиенты</Text>
                     {ingredients.map(ingredient => (
@@ -271,7 +279,12 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
                         </View>
                         <View style={styles.commentContent}>
                             <View style={styles.commentHeader}>
-                                <Text style={styles.userName}>{comment.userName}</Text>
+                                <View style={styles.userNameContainer}>
+                                    <Text style={styles.userName}>{comment.userName}</Text>
+                                    {comment.userId === recipe.userId && (
+                                        <Text style={styles.authorBadge}> (Автор)</Text>
+                                    )}
+                                </View>
                                 {comment.userId === user.id && (
                                     <TouchableOpacity 
                                         onPress={() => deleteComment(comment.id)}
@@ -486,6 +499,34 @@ const styles = StyleSheet.create({
         width: 25,
         height: 25,
         tintColor: '#FF0000',
+    },
+    authorContainer: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end', 
+        alignItems: 'center',
+        marginTop: 10,
+      },
+      authorAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginLeft: 10,
+        borderWidth: 1,
+        borderColor: '#3E5481',
+      },
+      authorName: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#3E5481',
+        marginLeft: 10
+      },
+      userNameContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    authorBadge: {
+        fontSize: 14,
+        color: '#1FCC79',
     },
 });
 
