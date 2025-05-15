@@ -7,6 +7,8 @@ import CreateScreen from './CreateScreen';
 import FavoriteScreen from './FavoriteScreen';
 import ProfileScreen from './ProfileScreen';
 
+import RecipeSearchScreen from './RecipeSearchScreen';
+
 import CategoryScreen from './CategoryScreen';
 import RecipesScreen from './RecipesScreen';
 import RecipeDetailsScreen from './RecipeDetailsScreen';
@@ -40,6 +42,12 @@ function HomeStack({route}) {
                 initialParams={{ user }}
                 options={{ title: 'Избранное' }} 
             />
+            <Stack.Screen 
+                name="RecipeSearchScreen" 
+                component={RecipeSearchScreen} 
+                initialParams={{ user }}
+                options={{ title: 'Поиск рецептов' }} 
+            />
         </Stack.Navigator>
     );
 }
@@ -71,10 +79,30 @@ function MainTabs({route}) {
                 }} 
             />
             <Tab.Screen 
+                name="Поиск рецептов" 
+                component={RecipeSearchScreen}
+                initialParams={{ user, setUser  }}
+                options={{
+                    headerTitleStyle: {
+                        color: '#3E5481',
+                    },
+                    tabBarIcon: ({ color, size }) => (
+                        <Image 
+                            source={require('../assets/screensIcons/search.png')}
+                            style={{ width: size, height: size, tintColor: color }}
+                        />
+                    ),
+                    tabBarLabel: () => null,
+                }} 
+            />
+            <Tab.Screen 
                 name="Создание рецепта" 
                 component={CreateScreen}
                 initialParams={{ user, setUser  }} 
                 options={{
+                    headerTitleStyle: {
+                        color: '#3E5481',
+                    },
                     tabBarIcon: ({ color, size }) => (
                         <Image 
                             source={require('../assets/screensIcons/create.png')}
@@ -89,6 +117,9 @@ function MainTabs({route}) {
                 component={FavoriteScreen}
                 initialParams={{ user }}
                 options={{
+                    headerTitleStyle: {
+                        color: '#3E5481',
+                    },
                     tabBarIcon: ({ color, size }) => (
                         <Image 
                             source={require('../assets/screensIcons/favorite.png')}
@@ -103,6 +134,9 @@ function MainTabs({route}) {
                 component={ProfileScreen}
                 initialParams={{ user, setUser  }}
                 options={{
+                    headerTitleStyle: {
+                        color: '#3E5481',
+                    },
                     tabBarIcon: ({ color, size }) => (
                         <Image 
                             source={require('../assets/screensIcons/profile.png')}

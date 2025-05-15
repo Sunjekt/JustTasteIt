@@ -9,6 +9,7 @@ import RecipesScreen from './screens/RecipesScreen';
 import RecipeDetailsScreen from './screens/RecipeDetailsScreen';
 import FavoriteScreen from './screens/FavoriteScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import RecipeSearchScreen from './screens/RecipeSearchScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -80,6 +81,11 @@ export default function App() {
         <Stack.Screen 
           name="ProfileScreen" 
           component={ProfileScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="RecipeSearchScreen" 
+          component={RecipeSearchScreen} 
           options={{ headerShown: false }} 
         />
       </Stack.Navigator>

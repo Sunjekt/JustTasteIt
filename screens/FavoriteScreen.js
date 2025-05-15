@@ -69,7 +69,9 @@ const FavoriteScreen = ({ route, navigation }) => {
                     categoryName: item.recipeCategoryName,
                     imagePath: item.recipeImagePath,
                     portion: item.recipePortion,
-                    description: item.recipeDescription
+                    description: item.recipeDescription,
+                    userName: item.recipeUserName,
+                    userImagePath: item.recipeUserImagePath
                 },
                 user, favouriteItem: {
                     id: item.id,

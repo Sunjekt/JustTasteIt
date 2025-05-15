@@ -10,7 +10,6 @@ const ProfileScreen = ({route, navigation}) => {
 
   useEffect(() => {
       getRecipes();
-      console.log(user); //
       getFavourites();
 
       const unsubscribe = navigation.addListener('focus', () => {

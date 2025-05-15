@@ -34,8 +34,7 @@ const LoginScreen = ({ route, navigation }) => {
 
       if (response.status === 200) {
         console.log("Data  :", data);
-        const newUser = { isAuthenticated: true, id: data.userId, userName: data.userName, imagePath: data.userImagePath}; // временно как и в регистрации
-        // setUser ({ isAuthenticated: true, id: data.userId, userName: data.userName });
+        const newUser = { isAuthenticated: true, id: data.userId, userName: data.userName, imagePath: data.userImagePath};
         console.log("User  :", newUser);
         navigation.navigate('Main', { user: newUser, setUser  });
       } else {

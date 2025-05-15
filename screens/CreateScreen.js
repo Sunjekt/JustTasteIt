@@ -216,6 +216,11 @@ const addCookingSteps = async (recipeId) => {
     const meas = measurements.find(item => item.id === Number(selectedUnit));
     const ingName = ingredientNames.find(item => item.id === Number(selectedIngredient));
 
+    if (!ingredientAmount || !meas || !ingName) {
+      setErrorMessage('Заполните все поля!');
+      return;
+    }
+
     const newIngredient = {
       ingredientName: ingName,
       count: parseInt(ingredientAmount),
@@ -223,14 +228,15 @@ const addCookingSteps = async (recipeId) => {
     };
 
     setIngredients([...ingredients, newIngredient]);
-    console.log(selectedIngredient);
-    console.log(selectedUnit);
     setErrorMessage('');
-
     setModalVisible(false);
     setSelectedIngredient(0);
     setSelectedUnit(0);
     setIngredientAmount('');
+  };
+
+  const handleRemoveIngredient = (id) => {
+      setIngredients(ingredients.filter(ingredient => ingredient.ingredientName.id !== id));
   };
 
   const handleAddStep = () => {
@@ -387,11 +393,20 @@ const addCookingSteps = async (recipeId) => {
         </View>
         <Text style={styles.heading}>Ингредиенты</Text>
         {ingredients.map(ingredient => (
-          <View key={ingredient.ingredientName.id} style={styles.footerLeft}>
+          <View key={ingredient.ingredientName.id} style={styles.ingredientItem}>
             <Image source={require('../assets/mark.png')} style={styles.icon} />
             <Text style={styles.ingredientText}>
               {ingredient.ingredientName.name}: {ingredient.count} {ingredient.measurement.name} 
             </Text>
+            <TouchableOpacity 
+                onPress={() => handleRemoveIngredient(ingredient.ingredientName.id)}
+                style={styles.removeButton}
+            >
+                <Image 
+                    source={require('../assets/delete.png')}
+                    style={styles.removeIcon}
+                />
+            </TouchableOpacity>
           </View>
         ))}
         <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
@@ -446,11 +461,15 @@ const addCookingSteps = async (recipeId) => {
               </View>
               {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
               <View style={styles.buttonContainer}>
-                <TouchableOpacity style={[styles.button, { backgroundColor: '#FF0000' }]} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.textStyle}>Отмена</Text>
+                <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#FF0000' }]} onPress={() => setModalVisible(false)}>
+                  <Text style={styles.modalButtonText}>Отмена</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.button, { backgroundColor: '#1FCC79' }]} onPress={handleAddIngredient}>
-                  <Text style={styles.textStyle}>Добавить</Text>
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: (!selectedUnit || !selectedIngredient || ingredientAmount === '')  ? '#D0DBEA' : '#1FCC79' }]}
+                  disabled={(!selectedUnit || !selectedIngredient || ingredientAmount === '')}
+                  onPress={handleAddIngredient}
+                >
+                  <Text style={styles.modalButtonText}>Добавить</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -511,11 +530,15 @@ const addCookingSteps = async (recipeId) => {
                 textAlignVertical="top"
               />
               <View style={styles.buttonContainer}>
-                <TouchableOpacity style={[styles.button, { backgroundColor: '#FF0000' }]} onPress={() => setStepModalVisible(false)}>
-                  <Text style={styles.textStyle}>Отмена</Text>
+                <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#FF0000' }]} onPress={() => setStepModalVisible(false)}>
+                  <Text style={styles.modalButtonText}>Отмена</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.button, { backgroundColor: '#1FCC79' }]} onPress={handleAddStep}>
-                  <Text style={styles.textStyle}>Добавить</Text>
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: (selectedStepDescription === '' || !selectedStepImage)  ? '#D0DBEA' : '#1FCC79' }]}
+                  disabled={(selectedStepDescription === '' || !selectedStepImage)}
+                  onPress={handleAddStep}
+                >
+                  <Text style={styles.modalButtonText}>Добавить</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -645,35 +668,25 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Затемнение фона
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
   modalView: {
-    width: '80%', // Ширина модального окна
-    height: 600,
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+      width: '90%',
+      backgroundColor: 'white',
+      borderRadius: 20,
+      padding: 25,
+      alignItems: 'center',
   },
-  button: {
+  modalButton: {
     borderRadius: 20,
     width: '40%',
     padding: 10,
     elevation: 2,
     marginVertical: 10,
   },
-  textStyle: {
+  modalButtonText: {
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'center',
@@ -689,11 +702,11 @@ const styles = StyleSheet.create({
   
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // Распределение кнопок по горизонтали
-    width: '100%', // Ширина контейнера на 100%
-    marginTop: 20, // Отступ сверху для отделения от других элементов
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 20,
   },
-  footerLeft: {
+  ingredientItem: {
     flexDirection: 'row',
     alignItems: 'center', // Выравнивает элементы по центру по вертикали
     marginVertical: 5
@@ -706,6 +719,7 @@ icon: {
 ingredientText: {
   fontSize: 17,
   color: '#3E5481',
+  flex: 1,
 },
 errorText: {
   color: 'red',
@@ -814,6 +828,14 @@ selectedStepImage: {
   justifyContent: 'center', // Центрирует содержимое по вертикали
   marginVertical: 10, // Отступ сверху
 },
+removeButton: {
+  marginLeft: 10,
+},
+removeIcon: {
+  width: 24,
+  height: 24,
+  tintColor: '#FF0000',
+}
 });
 
 export default CreateScreen;

@@ -526,6 +526,7 @@ const styles = StyleSheet.create({
     },
     authorBadge: {
         fontSize: 14,
+        marginBottom: 4,
         color: '#1FCC79',
     },
 });
