@@ -13,6 +13,10 @@ import CategoryScreen from './CategoryScreen';
 import RecipesScreen from './RecipesScreen';
 import RecipeDetailsScreen from './RecipeDetailsScreen';
 
+import UsersScreen from './UsersScreen';
+import ReportsScreen from './ReportsScreen';
+import StatementScreen from './StatementScreen';
+
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
@@ -48,6 +52,12 @@ function HomeStack({route}) {
                 initialParams={{ user }}
                 options={{ title: 'Поиск рецептов' }} 
             />
+            <Stack.Screen 
+                name="ReportsScreen" 
+                component={ReportsScreen} 
+                initialParams={{ user }}
+                options={{ title: 'Жалобы' }} 
+            />
         </Stack.Navigator>
     );
 }
@@ -78,57 +88,120 @@ function MainTabs({route}) {
                     tabBarLabel: () => null,
                 }} 
             />
-            <Tab.Screen 
-                name="Поиск рецептов" 
-                component={RecipeSearchScreen}
-                initialParams={{ user, setUser  }}
-                options={{
-                    headerTitleStyle: {
-                        color: '#3E5481',
-                    },
-                    tabBarIcon: ({ color, size }) => (
-                        <Image 
-                            source={require('../assets/screensIcons/search.png')}
-                            style={{ width: size, height: size, tintColor: color }}
-                        />
-                    ),
-                    tabBarLabel: () => null,
-                }} 
-            />
-            <Tab.Screen 
-                name="Создание рецепта" 
-                component={CreateScreen}
-                initialParams={{ user, setUser  }} 
-                options={{
-                    headerTitleStyle: {
-                        color: '#3E5481',
-                    },
-                    tabBarIcon: ({ color, size }) => (
-                        <Image 
-                            source={require('../assets/screensIcons/create.png')}
-                            style={{ width: size, height: size, tintColor: color }}
-                        />
-                    ),
-                    tabBarLabel: () => null,
-                }} 
-            />
-            <Tab.Screen 
-                name="Избранное" 
-                component={FavoriteScreen}
-                initialParams={{ user }}
-                options={{
-                    headerTitleStyle: {
-                        color: '#3E5481',
-                    },
-                    tabBarIcon: ({ color, size }) => (
-                        <Image 
-                            source={require('../assets/screensIcons/favorite.png')}
-                            style={{ width: size, height: size, tintColor: color }}
-                        />
-                    ),
-                    tabBarLabel: () => null,
-                }} 
-            />
+            {user.userRole === 'user' && (
+                <>
+                    <Tab.Screen 
+                        name="Поиск рецептов" 
+                        component={RecipeSearchScreen}
+                        initialParams={{ user, setUser  }}
+                        options={{
+                            headerTitleStyle: {
+                                color: '#3E5481',
+                            },
+                            tabBarIcon: ({ color, size }) => (
+                                <Image 
+                                    source={require('../assets/screensIcons/search.png')}
+                                    style={{ width: size, height: size, tintColor: color }}
+                                />
+                            ),
+                            tabBarLabel: () => null,
+                        }} 
+                    />
+                    <Tab.Screen 
+                        name="Создание рецепта" 
+                        component={CreateScreen}
+                        initialParams={{ user, setUser  }} 
+                        options={{
+                            headerTitleStyle: {
+                                color: '#3E5481',
+                            },
+                            tabBarIcon: ({ color, size }) => (
+                                <Image 
+                                    source={require('../assets/screensIcons/create.png')}
+                                    style={{ width: size, height: size, tintColor: color }}
+                                />
+                            ),
+                            tabBarLabel: () => null,
+                        }} 
+                    />
+                    <Tab.Screen 
+                        name="Избранное" 
+                        component={FavoriteScreen}
+                        initialParams={{ user }}
+                        options={{
+                            headerTitleStyle: {
+                                color: '#3E5481',
+                            },
+                            tabBarIcon: ({ color, size }) => (
+                                <Image 
+                                    source={require('../assets/screensIcons/favorite.png')}
+                                    style={{ width: size, height: size, tintColor: color }}
+                                />
+                            ),
+                            tabBarLabel: () => null,
+                        }} 
+                    />
+                </>
+            )}
+            {user.userRole === 'admin' && (
+                <>
+                    <Tab.Screen 
+                        name="Пользователи"
+                        component={UsersScreen}
+                        initialParams={{ user, setUser  }}
+                        options={{
+                            headerTitleStyle: {
+                                color: '#3E5481',
+                            },
+                            headerShown: false,
+                            tabBarIcon: ({ color, size }) => (
+                                <Image 
+                                    source={require('../assets/screensIcons/users.png')}
+                                    style={{ width: size, height: size, tintColor: color }}
+                                />
+                            ),
+                            tabBarLabel: () => null,
+                        }} 
+                    />
+                    <Tab.Screen 
+                    name="Жалобы"
+                    component={ReportsScreen}
+                    initialParams={{ user, setUser  }}
+                    options={{
+                        headerTitleStyle: {
+                            color: '#3E5481',
+                        },
+                        headerShown: false,
+                        tabBarIcon: ({ color, size }) => (
+                            <Image 
+                                source={require('../assets/report.png')}
+                                style={{ width: size, height: size, tintColor: color }}
+                            />
+                        ),
+                        tabBarLabel: () => null,
+                    }} 
+                    />
+                    <Tab.Screen 
+                    name="Отчеты"
+                    component={StatementScreen}
+                    initialParams={{ user, setUser  }}
+                    options={{
+                        headerTitleStyle: {
+                            color: '#3E5481',
+                        },
+                        headerShown: false,
+                        tabBarIcon: ({ color, size }) => (
+                            <Image 
+                                source={require('../assets/screensIcons/statement.png')}
+                                style={{ width: size, height: size, tintColor: color }}
+                            />
+                        ),
+                        tabBarLabel: () => null,
+                    }} 
+                    />
+                </>
+            )}
+            
             <Tab.Screen 
                 name="Профиль"
                 component={ProfileScreen}

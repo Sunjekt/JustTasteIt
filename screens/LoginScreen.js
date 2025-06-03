@@ -20,6 +20,7 @@ const LoginScreen = ({ route, navigation }) => {
 
     const requestOptions = {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: formValues.email,
@@ -34,7 +35,7 @@ const LoginScreen = ({ route, navigation }) => {
 
       if (response.status === 200) {
         console.log("Data  :", data);
-        const newUser = { isAuthenticated: true, id: data.userId, userName: data.userName, imagePath: data.userImagePath};
+        const newUser = { isAuthenticated: true, id: data.userId, userName: data.userName, imagePath: data.userImagePath, userRole: data.userRole};
         console.log("User  :", newUser);
         navigation.navigate('Main', { user: newUser, setUser  });
       } else {

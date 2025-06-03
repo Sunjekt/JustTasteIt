@@ -107,7 +107,7 @@ const CreateScreen = ({route}) => {
     try {
         const response = await fetch("https://localhost:7108/api/recipes", requestOptions);
         const data = await response.json();
-
+        console.log(user);
         if (response.status === 201) {
             const newRecipeId = data.id;
             await addIngredients(newRecipeId);
@@ -238,6 +238,16 @@ const addCookingSteps = async (recipeId) => {
   const handleRemoveIngredient = (id) => {
       setIngredients(ingredients.filter(ingredient => ingredient.ingredientName.id !== id));
   };
+
+  const handleRemoveStep = (stepNumber) => {
+  const updatedSteps = recipeSteps.filter(step => step.number !== stepNumber);
+  const renumberedSteps = updatedSteps.map((step, index) => ({
+    ...step,
+    number: index + 1
+  }));
+  
+  setRecipeSteps(renumberedSteps);
+};
 
   const handleAddStep = () => {
 
@@ -487,6 +497,15 @@ const addCookingSteps = async (recipeId) => {
                 <Image source={{ uri: step.image }} style={styles.stepImage} />
               )}
             </View>
+            <TouchableOpacity 
+              onPress={() => handleRemoveStep(step.number)}
+              style={styles.removeButton}
+            >
+              <Image 
+                source={require('../assets/delete.png')}
+                style={styles.removeIcon}
+              />
+            </TouchableOpacity>
           </View>
         ))}
 
@@ -766,6 +785,11 @@ stepContainer: {
   flexDirection: 'row', // Располагает элементы в строку
   alignItems: 'flex-start', // Выравнивает элементы по верхнему краю
   marginVertical: 10, // Отступ между шагами
+  justifyContent: 'space-between', // Распределяет пространство между элементами
+},
+stepDescriptionContainer: {
+  flex: 1, // Занимает оставшееся пространство
+  marginRight: 10, // Отступ перед кнопкой удаления
 },
 stepNumberContainer: {
   width: 25, // Ширина круга
@@ -780,9 +804,6 @@ stepNumber: {
   fontSize: 16,
   fontWeight: 'bold',
   color: '#FFFFFF', // Цвет текста внутри круга
-},
-stepDescriptionContainer: {
-  flex: 1, // Занимает оставшееся пространство
 },
 stepDescription: {
   fontSize: 16,

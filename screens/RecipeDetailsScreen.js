@@ -10,13 +10,18 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
     const [commentsCount, setCommentsCount] = useState(0);
     const [newComment, setNewComment] = useState('');
     const [isRecipeFavorite, setIsRecipeFavorite] = useState(favouriteItem);
+    const [isReport, setIsReport] = useState(null);
+
+    useEffect(() => {
+    }, [isRecipeFavorite, isReport]);
 
     useEffect(() => {
         getIngredients();
         getSteps();
         getComments();
         console.log(recipe);
-    }, [isRecipeFavorite]);
+        getReport();
+    }, []);
 
     const getIngredients = () => {
         const requestOptions = {
@@ -43,8 +48,9 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
             .then((response) => response.json())
             .then(
                 (data) => {
-                    console.log("Шаги:", data);
-                    setSteps(data);
+                    const sortedSteps = [...data].sort((a, b) => a.number - b.number);
+                    console.log("Шаги:", sortedSteps);
+                    setSteps(sortedSteps);
                     },
                 (error) => {
                     console.log(error);
@@ -67,6 +73,23 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
                 },
                 (error) => {
                     console.log(error);
+                }
+            );
+    };
+
+    const getReport = () => {
+        const requestOptions = {
+            method: "GET",
+        };
+        fetch(`https://localhost:7108/api/Reports/ByRecipeIdAndUserId/${recipe.id}/${user.id}`, requestOptions)
+            .then((response) => response.json())
+            .then(
+                (data) => {
+                    setIsReport(data);
+                    console.log("Жалоба: ", data)
+                },
+                (error) => {
+
                 }
             );
     };
@@ -177,11 +200,129 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
         }
     };
 
+    const postReport = async () => {
+        const requestOptions = {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                userId: user.id,
+                recipeId: recipe.id,
+            }),
+        };
+    
+        try {
+            const response = await fetch("https://localhost:7108/api/reports", requestOptions);
+            const data = await response.json();
+    
+            if (response.status === 201) {
+                const newReportId = data.id;
+                setIsReport({ recipeId: recipe.id, id: newReportId });
+                console.log("Успех");
+            } else {
+                if (data.error) {
+                    setErrorMessages(data.error);
+                }
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const deleteReport = async (id) => {
+        const requestOptions = {
+            method: "DELETE",
+        };
+    
+        try {
+            const response = await fetch(`https://localhost:7108/api/reports/${id}`, requestOptions);
+    
+            if (response.status === 204) {
+                setIsReport(null);
+            } else {
+                console.error("Не вышло");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const deleteRecipe = async () => {
+        const deletedBy = user.userRole;
+        const requestOptions = {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                id: recipe.id,
+                name: recipe.name,
+                description: recipe.description,
+                portion: recipe.portion,
+                time: recipe.time,
+                userId: recipe.userId,
+                categoryId: recipe.categoryId,
+                imagePath: recipe.imagePath,
+                createdAt: recipe.createdAt,
+                deletedBy: deletedBy
+            }),
+        };
+    
+        try {
+            const response = await fetch(`https://localhost:7108/api/recipes/${recipe.id}`, requestOptions);
+    
+            if (response.ok) {
+                console.log("Рецепт удален");
+            } else {
+                console.error("Не вышло");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const restoreRecipe = async () => {
+        const deletedBy = null;
+        const requestOptions = {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                id: recipe.id,
+                name: recipe.name,
+                description: recipe.description,
+                portion: recipe.portion,
+                time: recipe.time,
+                userId: recipe.userId,
+                categoryId: recipe.categoryId,
+                imagePath: recipe.imagePath,
+                createdAt: recipe.createdAt,
+                deletedBy: deletedBy
+            }),
+        };
+    
+        try {
+            const response = await fetch(`https://localhost:7108/api/recipes/${recipe.id}`, requestOptions);
+    
+            if (response.ok) {
+                console.log("Рецепт восстановлен");
+            } else {
+                console.error("Не вышло");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     const handleFavoritePress = async () => {
         if (isRecipeFavorite) {
-            await deleteFavourite(favouriteItem.id);
+            await deleteFavourite(isRecipeFavorite.id);
         } else {
             await postFavorite();
+        }
+    };
+
+    const handleReportPress = async () => {
+        if (isReport) {
+            await deleteReport(isReport.id);
+        } else {
+            await postReport();
         }
     };
 
@@ -189,12 +330,55 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
         <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <Image source={{uri: recipe.imagePath}} style={styles.recipeImage} />
-                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                    <Image source={require('../assets/arrowBack.png')} style={styles.backIcon} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.favoriteButton} onPress={handleFavoritePress}>
-                    <Image source={require('../assets/favorite.png')} style={[styles.favoriteIcon, { tintColor: isRecipeFavorite ? '#FF0000' : '#FFFFFF' }]}  />
-                </TouchableOpacity>
+                
+                {/* Контейнер для всех кнопок действий */}
+                <View style={styles.actionButtonsContainer}>
+                    {/* Кнопка назад */}
+                    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                        <Image source={require('../assets/arrowBack.png')} style={styles.backIcon} />
+                    </TouchableOpacity>
+                    
+                    {/* Группа правых кнопок */}
+                    <View style={styles.rightActionButtons}>
+                        {/* Кнопки администратора */}
+                        {((recipe.userId === user.id || user.userRole === 'admin') && recipe.deletedBy === null) && (
+                            <TouchableOpacity 
+                                onPress={() => deleteRecipe(recipe.id)}
+                                style={styles.deleteRecipeButton}
+                            >
+                                <Image 
+                                    source={require('../assets/delete.png')} 
+                                    style={styles.deleteRecipeIcon}
+                                />
+                            </TouchableOpacity>
+                        )}
+                        {((recipe.userId === user.id && recipe.deletedBy === 'user') || (user.userRole === 'admin' && recipe.deletedBy === 'admin')) && (
+                            <TouchableOpacity 
+                                onPress={() => restoreRecipe(recipe.id)}
+                                style={styles.restoreRecipeButton}
+                            >
+                                <Image 
+                                    source={require('../assets/restore.png')} 
+                                    style={styles.restoreRecipeIcon}
+                                />
+                            </TouchableOpacity>
+                        )}
+                        
+                        {(user.userRole === 'user') && (
+                            <>
+                                <TouchableOpacity style={styles.favoriteButton} onPress={handleFavoritePress}>
+                                    <Image source={require('../assets/favorite.png')} style={[styles.favoriteIcon, { tintColor: isRecipeFavorite ? '#FF0000' : '#FFFFFF'}]}  />
+                                </TouchableOpacity>
+                                {(user.id !== recipe.userId) && (
+                                    <TouchableOpacity style={styles.reportButton} onPress={handleReportPress}>
+                                        <Image source={require('../assets/report.png')} style={[styles.reportIcon, { tintColor: isReport ? '#FF0000' : '#FFFFFF'}]}  />
+                                    </TouchableOpacity>
+                                )}
+                            </>
+                        )}
+                    </View>
+                </View>
+
                 <View style={styles.detailsContainer}>
                     <Text style={styles.heading}>{recipe.name}</Text>
                     <View style={styles.footer}>
@@ -245,29 +429,29 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
                     <Text style={styles.heading}>{commentsCount} комментариев</Text>
                 </View>
                 <View style={styles.addCommentContainer}>
-                <View style={styles.avatarContainer}>
-                    <Image 
-                    source={{uri: user.imagePath}} 
-                    style={styles.avatarImage}
-                    />
-                </View>
-                <View style={styles.addCommentContent}>
-                    <TextInput
-                    style={styles.commentInput}
-                    placeholder="Добавить комментарий..."
-                    placeholderTextColor="#9FA5B4"
-                    multiline
-                    value={newComment}
-                    onChangeText={setNewComment}
-                    />
-                    <TouchableOpacity 
-                    style={styles.addButton}
-                    onPress={postComment}
-                    disabled={!newComment.trim()}
-                    >
-                    <Text style={styles.addButtonText}>Отправить</Text>
-                    </TouchableOpacity>
-                </View>
+                    <View style={styles.avatarContainer}>
+                        <Image 
+                        source={{uri: user.imagePath}} 
+                        style={styles.avatarImage}
+                        />
+                    </View>
+                    <View style={styles.addCommentContent}>
+                        <TextInput
+                        style={styles.commentInput}
+                        placeholder="Добавить комментарий..."
+                        placeholderTextColor="#9FA5B4"
+                        multiline
+                        value={newComment}
+                        onChangeText={setNewComment}
+                        />
+                        <TouchableOpacity 
+                        style={styles.addButton}
+                        onPress={postComment}
+                        disabled={!newComment.trim()}
+                        >
+                        <Text style={styles.addButtonText}>Отправить</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
                 {comments.map(comment => (
                     <View key={comment.id} style={styles.commentContainer}>
@@ -285,7 +469,7 @@ const RecipeDetailsScreen = ({ route, navigation }) => {
                                         <Text style={styles.authorBadge}> (Автор)</Text>
                                     )}
                                 </View>
-                                {comment.userId === user.id && (
+                                {(comment.userId === user.id || user.userRole === 'admin') && (
                                     <TouchableOpacity 
                                         onPress={() => deleteComment(comment.id)}
                                         style={styles.deleteButton}
@@ -345,11 +529,25 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: '#9FA5C0',
     },
-    favoriteButton: {
+    actionButtonsContainer: {
         position: 'absolute',
-        top: 50, 
-        right: 15,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        top: 50,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 15,
+        alignItems: 'flex-start',
+    },
+    rightActionButtons: {
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        gap: 15,
+    },
+    favoriteButton: {
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        borderColor: '#FF0000',
+        borderWidth: 2,
         borderRadius: 10, 
         padding: 5, 
     },
@@ -357,18 +555,53 @@ const styles = StyleSheet.create({
         width: 35,
         height: 35,
     },
+    deleteRecipeButton: {
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        padding: 5,
+        borderColor: '#FF0000',
+        borderWidth: 2,
+        borderRadius: 10, 
+    },
+    restoreRecipeButton: {
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        padding: 5,
+        borderColor: '#1FCC79',
+        borderWidth: 2,
+        borderRadius: 10, 
+    },
+    deleteRecipeIcon: {
+        width: 35,
+        height: 35,
+        tintColor: '#FF0000',
+    },
+    restoreRecipeIcon: {
+        width: 35,
+        height: 35,
+        tintColor: '#1FCC79',
+    },
+    reportButton: {
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        padding: 5,
+        borderColor: '#FF0000',
+        borderWidth: 2,
+        borderRadius: 10, 
+    },
+    reportIcon: {
+        width: 35,
+        height: 35,
+        tintColor: '#FF0000',
+    },
     backButton: {
-        position: 'absolute',
-        top: 50,
-        left: 15,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        borderRadius: 50,
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        borderColor: '#3E5481',
+        borderWidth: 2,
+        borderRadius: 10,
         padding: 5,
     },
     backIcon: {
         width: 35,
         height: 35, 
-        tintColor: '#FFFFFF',
+        tintColor: '#3E5481',
     },
     footer: {
         flexDirection: 'row',
@@ -427,41 +660,41 @@ const styles = StyleSheet.create({
         flexDirection: 'row', 
         marginVertical: 12,    
         paddingHorizontal: 16, 
-      },
-      avatarContainer: {
+    },
+    avatarContainer: {
         marginRight: 12,        
-      },
-      avatarImage: {
+    },
+    avatarImage: {
         width: 40,    
         height: 40,
         borderRadius: 20,
         borderColor: '#3E5481',
         borderWidth: 1,  
-      },
-      commentContent: {
+    },
+    commentContent: {
         flex: 1,               
-      },
-      userName: {
+    },
+    userName: {
         fontSize: 14,
         fontWeight: '600',    
         color: '#3E5481',
         marginBottom: 4,          
-      },
-      commentText: {
+    },
+    commentText: {
         fontSize: 14,
         color: '#2D3748',         
         lineHeight: 20,        
-      },
-      addCommentContainer: {
+    },
+    addCommentContainer: {
         flexDirection: 'row',
         marginVertical: 12,
         paddingHorizontal: 16,
         alignItems: 'flex-start',
-      },
-      addCommentContent: {
+    },
+    addCommentContent: {
         flex: 1,
-      },
-      commentInput: {
+    },
+    commentInput: {
         fontSize: 14,
         color: '#2D3748',
         borderWidth: 1,
@@ -471,22 +704,22 @@ const styles = StyleSheet.create({
         minHeight: 50,
         textAlignVertical: 'top',
         marginBottom: 8,
-      },
-      addButton: {
+    },
+    addButton: {
         backgroundColor: '#1FCC79',
         paddingVertical: 8,
         paddingHorizontal: 16,
         borderRadius: 32,
         alignSelf: 'flex-end',
-      },
-      addButtonText: {
+    },
+    addButtonText: {
         color: 'white',
         fontWeight: '600',
-      },
-      addButtonDisabled: {
+    },
+    addButtonDisabled: {
         backgroundColor: '#C5C7D0',
-      },
-      commentHeader: {
+    },
+    commentHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -505,22 +738,22 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end', 
         alignItems: 'center',
         marginTop: 10,
-      },
-      authorAvatar: {
+    },
+    authorAvatar: {
         width: 40,
         height: 40,
         borderRadius: 20,
         marginLeft: 10,
         borderWidth: 1,
         borderColor: '#3E5481',
-      },
-      authorName: {
+    },
+    authorName: {
         fontSize: 14,
         fontWeight: '600',
         color: '#3E5481',
         marginLeft: 10
-      },
-      userNameContainer: {
+    },
+    userNameContainer: {
         flexDirection: 'row',
         alignItems: 'center',
     },

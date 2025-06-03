@@ -103,6 +103,32 @@ const deleteFavourite = async (id) => {
     }
 };
 
+const logout = async () => {
+    console.log("Success");
+
+    const requestOptions = {
+      method: "POST",
+      credentials: "include",
+    };
+
+    try {
+      const response = await fetch("https://localhost:7108/api/account/logoff", requestOptions);
+      const data = await response.json();
+
+      if (response.status === 200) {
+        console.log("Data  :", data);
+        const newUser = { isAuthenticated: false, id: "", userName: "", ImagePath: ""};
+        navigation.navigate('Login', { user: newUser, setUser  });
+      } else {
+        if (data.error) {
+          setErrorMessages(data.error);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const renderRecipeItem = ({ item }) => {
     const favouriteItem = favourites.find(fav => fav.recipeId === item.id);
 
@@ -114,24 +140,34 @@ const deleteFavourite = async (id) => {
         }
     };
 
-    return ( 
+    return (
         <TouchableOpacity 
             style={styles.recipeItem} 
             onPress={() => navigation.navigate('RecipeDetailsScreen', { recipe: item, user, favouriteItem })}
         >
             <Image source={{uri: item.imagePath}} style={styles.recipeImage} />
             <TouchableOpacity style={styles.favoriteButton} onPress={handleFavoritePress}>
-                    <Image source={require('../assets/favorite.png')} style={[styles.favoriteIcon, { tintColor: favouriteItem ? '#FF0000' : '#FFFFFF' }]} />
-                </TouchableOpacity>
-            <Text style={styles.recipeName}>{item.name}</Text>
-            <Text style={styles.recipeCookingTime}>{item.categoryName} • {item.time}</Text>
+                <Image 
+                    source={require('../assets/favorite.png')} 
+                    style={[styles.favoriteIcon, { tintColor: favouriteItem ? '#FF0000' : '#FFFFFF' }]} 
+                />
+            </TouchableOpacity>
+            <Text style={[
+                styles.recipeName, 
+                item.deletedBy === 'user' && { color: 'red' }
+            ]}>
+                {item.name}{item.deletedBy === 'user' && " (Удалено)"}
+            </Text>
+            <Text style={styles.recipeCookingTime}>
+                {item.categoryName} • {item.time}
+            </Text>
         </TouchableOpacity>
     );
   };
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.logoutButton}>
+      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
         <Image
           source={require('../assets/logout.png')} 
           style={styles.logoutImage}
@@ -195,8 +231,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   recipeItem: {
-    flex: 1, // Занимает равное пространство
-    margin: 8, // Отступ между элементами
+    flex: 1,
+    margin: 8,
 
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
@@ -220,6 +256,7 @@ recipeCookingTime: {
 },
 
   logoutButton: {
+    zIndex: 100,
     position: 'absolute',
     top: 20,
     right: 20,
@@ -236,6 +273,7 @@ recipeCookingTime: {
     right: 10, 
     backgroundColor: 'rgba(255, 255, 255, 0.2)', 
     borderRadius: 10, 
+    borderColor: '#FF0000',
     padding: 5, 
   },
   favoriteIcon: {

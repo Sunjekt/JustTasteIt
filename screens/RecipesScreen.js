@@ -32,7 +32,12 @@ const RecipesScreen = ({ route, navigation }) => {
             .then(
                 (data) => {
                     console.log("Data:", data);
-                    setRecipes(data);
+                        if (user.userRole === 'admin') {
+                            setRecipes(data.filter(item => item.deletedBy !== 'user'));
+                        }
+                        else {
+                            setRecipes(data.filter(item => item.deletedBy === null));
+                        }
                 },
                 (error) => {
                     console.log(error);
@@ -76,7 +81,6 @@ const RecipesScreen = ({ route, navigation }) => {
             if (response.status === 201) {
                 const newFavouriteId = data.id;
                 setFavourites(prevFavourites => [...prevFavourites, { recipeId: recipeId, id: newFavouriteId }]);
-                console.log("Успех");
             } else {
                 if (data.error) {
                     setErrorMessages(data.error);
@@ -218,6 +222,7 @@ const styles = StyleSheet.create({
         right: 10, 
         backgroundColor: 'rgba(255, 255, 255, 0.2)', 
         borderRadius: 10, 
+        borderColor: '#FF0000',
         padding: 5, 
     },
     favoriteIcon: {

@@ -12,10 +12,10 @@ const FavoriteScreen = ({ route, navigation }) => {
         getFavourites();
 
         const unsubscribe = navigation.addListener('focus', () => {
-            getFavourites(); // Обновляем избранные рецепты при фокусе на экране
+            getFavourites();
         });
 
-        return unsubscribe; // Убираем слушатель при размонтировании компонента
+        return unsubscribe;
     }, [navigation, setFavourites]);
 
 
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
     },
     scrollView: {
-        paddingBottom: 20, // Отступ внизу для удобства прокрутки
+        paddingBottom: 20,
     },
     inputContainer: {
         flexDirection: 'row',
@@ -147,9 +147,8 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
     },
     recipeItem: {
-        flex: 1, // Занимает равное пространство
-        margin: 8, // Отступ между элементами
-
+        flex: 1,
+        margin: 8,
         backgroundColor: '#FFFFFF',
         borderRadius: 10,
 
@@ -172,15 +171,16 @@ const styles = StyleSheet.create({
     },
     favoriteButton: {
         position: 'absolute',
-        top: 10, // Расположение иконки сверху
-        right: 10, // Расположение иконки справа
-        backgroundColor: 'rgba(255, 255, 255, 0.2)', // Полупрозрачный фон
-        borderRadius: 10, // Круглая кнопка
-        padding: 5, // Отступы вокруг иконки
+        top: 10,
+        right: 10,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: 10,
+        borderColor: '#FF0000',
+        padding: 5, 
     },
     favoriteIcon: {
-        width: 24, // Ширина иконки
-        height: 24, // Высота иконки
+        width: 24, 
+        height: 24, 
         tintColor: '#FF0000'
     },
 });

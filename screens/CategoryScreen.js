@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFFFFF',
         justifyContent: 'center',
-        alignItems: 'center',
+
     },
     container: {
         padding: 16,
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     },
     categoryItem: {
         padding: 16,
-        width: '90%',
+        width: '70%',
         alignSelf: 'center',
         marginVertical: 8,
         backgroundColor: '#F7F4F4',
